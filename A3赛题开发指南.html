@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A3赛题开发指南 - 基于大模型的个性化资源生成与学习多智能体系统开发</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --primary-light: #dbeafe;
+    --accent: #f59e0b;
+    --accent-dark: #d97706;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --code-bg: #f1f5f9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+
+  /* ====== 封面 ====== */
+  .cover {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%);
+    color: white;
+    padding: 80px 40px 60px;
+    text-align: center;
+  }
+  .cover h1 { font-size: 32px; margin-bottom: 12px; letter-spacing: 1px; }
+  .cover .subtitle { font-size: 18px; opacity: 0.9; margin-bottom: 8px; }
+  .cover .meta { font-size: 14px; opacity: 0.7; margin-top: 20px; }
+  .cover .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 13px;
+    margin: 4px 6px;
+  }
+
+  /* ====== 目录 ====== */
+  .toc {
+    max-width: 960px;
+    margin: 40px auto;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 32px 40px;
+    box-shadow: var(--shadow);
+  }
+  .toc h2 {
+    font-size: 22px;
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+    margin-bottom: 20px;
+  }
+  .toc ol { list-style: none; counter-reset: toc; }
+  .toc li {
+    counter-increment: toc;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .toc li:last-child { border-bottom: none; }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-weight: 700;
+    color: var(--primary);
+    margin-right: 12px;
+    font-size: 14px;
+  }
+  .toc a { text-decoration: none; color: var(--text); }
+  .toc a:hover { color: var(--primary); }
+
+  /* ====== 主内容 ====== */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 36px 40px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .section h2 {
+    font-size: 24px;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section h2 .num {
+    background: var(--primary);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section h3 {
+    font-size: 18px;
+    color: var(--text);
+    margin-top: 28px;
+    margin-bottom: 12px;
+    padding-left: 12px;
+    border-left: 3px solid var(--accent);
+  }
+  .section h4 {
+    font-size: 16px;
+    color: var(--text);
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+  .section p { margin-bottom: 12px; }
+  .section ul, .section ol { margin: 8px 0 16px 24px; }
+  .section li { margin-bottom: 6px; }
+
+  /* ====== 标签 ====== */
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag-backend { background: #dbeafe; color: #1e40af; }
+  .tag-frontend { background: #fce7f3; color: #be185d; }
+  .tag-ai { background: #fef3c7; color: #92400e; }
+  .tag-devops { background: #d1fae5; color: #065f46; }
+  .tag-tool { background: #e9d5ff; color: #6b21a8; }
+  .tag-required { background: #fee2e2; color: #991b1b; }
+  .tag-bonus { background: #ccfbf1; color: #115e59; }
+
+  /* ====== 表格 ====== */
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* ====== 代码块 ====== */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  }
+  p code, li code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--danger);
+  }
+
+  /* ====== 提示框 ====== */
+  .callout {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-left: 4px solid;
+  }
+  .callout-info { background: #eff6ff; border-color: var(--primary); }
+  .callout-warn { background: #fffbeb; border-color: var(--accent); }
+  .callout-tip { background: #f0fdf4; border-color: var(--success); }
+  .callout-danger { background: #fef2f2; border-color: var(--danger); }
+  .callout-title { font-weight: 700; margin-bottom: 6px; }
+
+  /* ====== 步骤卡片 ====== */
+  .step-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    background: #fafbfc;
+    transition: box-shadow 0.2s;
+  }
+  .step-card:hover { box-shadow: var(--shadow-lg); }
+  .step-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .step-card-header h4 { margin: 0; }
+  .step-card .tech-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  /* ====== 架构图 ====== */
+  .arch-diagram {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 16px 0;
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ====== 时间线 ====== */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+
+  /* ====== 页脚 ====== */
+  .footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-light);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    .cover { padding: 40px 20px; }
+    .cover h1 { font-size: 22px; }
+    .section { padding: 20px; }
+    .toc { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<div class="cover">
+  <h1>基于大模型的个性化资源生成与学习多智能体系统开发</h1>
+  <p class="subtitle">第十五届中国软件杯 A3赛题 · 完整开发指南</p>
+  <div style="margin-top: 16px;">
+    <span class="badge">出题企业：科大讯飞</span>
+    <span class="badge">组类：A组</span>
+    <span class="badge">多智能体系统</span>
+    <span class="badge">大模型应用</span>
+  </div>
+  <p class="meta">文档版本 v1.0 · 2026年7月</p>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#sec1">赛题深度解读与核心要求拆解</a></li>
+    <li><a href="#sec2">系统整体架构设计</a></li>
+    <li><a href="#sec3">技术栈总览与选型理由</a></li>
+    <li><a href="#sec4">第一步：项目初始化与开发环境搭建</a></li>
+    <li><a href="#sec5">第二步：多智能体框架搭建</a></li>
+    <li><a href="#sec6">第三步：知识库构建与RAG系统</a></li>
+    <li><a href="#sec7">第四步：对话式学习画像构建</a></li>
+    <li><a href="#sec8">第五步：多智能体协同资源生成</a></li>
+    <li><a href="#sec9">第六步：个性化学习路径规划</a></li>
+    <li><a href="#sec10">第七步：智能辅导与学习效果评估（加分项）</a></li>
+    <li><a href="#sec11">第八步：前端界面开发</a></li>
+    <li><a href="#sec12">第九步：防幻觉与内容安全机制</a></li>
+    <li><a href="#sec13">第十步：系统测试与性能优化</a></li>
+    <li><a href="#sec14">第十一步：部署与交付</a></li>
+    <li><a href="#sec15">第十二步：文档撰写与提交物准备</a></li>
+    <li><a href="#sec16">开发时间线规划</a></li>
+    <li><a href="#sec17">评分策略与高分要点</a></li>
+  </ol>
+</div>
+
+<div class="container">
+
+<!-- ==================== 1. 赛题深度解读 ==================== -->
+<div class="section" id="sec1">
+  <h2><span class="num">01</span> 赛题深度解读与核心要求拆解</h2>
+
+  <h3>1.1 赛题本质</h3>
+  <p>这道题的核心是构建一个<strong>多智能体协作的个性化学习平台</strong>，利用大模型（LLM）为高校学生自动生成多模态学习资源，并根据学生画像提供个性化学习路径。出题企业是<strong>科大讯飞</strong>，因此在技术选型上需要重点考虑讯飞生态工具。</p>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">⚠️ 赛题关键约束</div>
+    <p>赛题原文明确要求：<strong>"开发过程中使用的其他AI辅助工具，需选用科大讯飞相关工具。"</strong> 这意味着你的AI编程助手、大模型API调用应优先使用讯飞产品生态（如 iFlyCode、星火大模型 API、讯飞开放平台各项能力等），这在评审时会是加分点。</p>
+  </div>
+
+  <h3>1.2 五大核心功能拆解</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th width="8%">编号</th>
+        <th width="20%">功能模块</th>
+        <th width="12%">性质</th>
+        <th>核心要求</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>对话式学习画像构建</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>通过自然语言对话（非表单）自动抽取学生特征，构建≥6个维度的动态画像，支持随学随更新</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>多智能体协同资源生成</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>不同角色智能体协作生成≥5种类型资源（讲解文档、思维导图、题库、拓展阅读、视频/动画、代码实操等）</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>学习路径规划与推送</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>多智能体协同整合资源，动态规划学习路径，基于画像精准推送多类型内容</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>智能辅导</td>
+        <td><span class="tag tag-bonus">加分项</span></td>
+        <td>即时多模态答疑（文字+图解+短视频），针对性学习引导</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>学习效果评估</td>
+        <td><span class="tag tag-bonus">加分项</span></td>
+        <td>实时跟踪学习行为，多维度评估，动态调整推送策略和学习计划</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>1.3 非功能性要求</h3>
+  <ul>
+    <li><strong>界面规范</strong>：流式输出、Markdown渲染、多模态内容卡片化展示，符合现代AI产品交互规范</li>
+    <li><strong>开源标注</strong>：使用开源项目需在文档显著位置标注名称、来源及协议</li>
+    <li><strong>防幻觉</strong>：完善的防幻觉与内容安全过滤机制，确保学术内容无事实性错误</li>
+    <li><strong>响应速度</strong>：核心功能响应时间合理，多模态生成提供"生成进度追踪"或"流式呈现"</li>
+  </ul>
+
+  <h3>1.4 评分标准与权重</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>评分项</th>
+        <th width="10%">占比</th>
+        <th>得分要点</th>
+      </tr>
+      <tr>
+        <td>创新价值与实用性</td>
+        <td><strong>35%</strong></td>
+        <td>选题切入点新颖、解决真实痛点、多智能体协作设计有创新、用户体验有亮点</td>
+      </tr>
+      <tr>
+        <td>功能实现及技术要求</td>
+        <td><strong>45%</strong></td>
+        <td>5大功能完整实现、多智能体框架明确、AI技术融合深度、系统稳定可运行</td>
+      </tr>
+      <tr>
+        <td>配套文档丰富度</td>
+        <td><strong>10%</strong></td>
+        <td>系统开发说明书、测试说明书规范完整，含架构图/流程图，需求与技术结合点清晰</td>
+      </tr>
+      <tr>
+        <td>演示视频、PPT效果</td>
+        <td><strong>10%</strong></td>
+        <td>演示视频≤7分钟、PPT逻辑清晰重点突出，展示多模态生成效果与AI技术融合</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 策略提示</div>
+    <p>功能实现占45%是最大权重，必须保证5个核心功能完整可运行。创新价值占35%，建议在<strong>多智能体协作机制</strong>和<strong>多模态资源生成质量</strong>上做出亮点。两个加分项（智能辅导+效果评估）能显著拉开差距，建议尽量实现。</p>
+  </div>
+</div>
+
+<!-- ==================== 2. 系统整体架构 ==================== -->
+<div class="section" id="sec2">
+  <h2><span class="num">02</span> 系统整体架构设计</h2>
+
+  <h3>2.1 分层架构</h3>
+  <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────┐
+│                    前端展示层 (React)                      │
+│  对话交互 │ 画像可视化 │ 资源卡片 │ 学习路径 │ 评估面板    │
+├─────────────────────────────────────────────────────────┤
+│                    API网关层 (FastAPI)                     │
+│        REST API │ SSE流式接口 │ WebSocket │ 认证鉴权       │
+├─────────────────────────────────────────────────────────┤
+│                  多智能体编排层 (CrewAI)                    │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │
+│  │画像Agent│ │文档Agent│ │导图Agent│ │题库Agent│ │视频Agent│  │
+│  └────────┘ └────────┘ └────────┘ └────────┘ └────────┘  │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐             │
+│  │代码Agent│ │路径Agent│ │辅导Agent│ │评估Agent│             │
+│  └────────┘ └────────┘ └────────┘ └────────┘             │
+├─────────────────────────────────────────────────────────┤
+│                   AI能力层 (大模型+工具)                    │
+│  星火大模型API │ RAG检索 │ TTS语音 │ 图像生成 │ 代码执行    │
+├─────────────────────────────────────────────────────────┤
+│                    数据存储层                              │
+│  PostgreSQL │ Chroma向量库 │ Redis缓存 │ 对象存储(MinIO)   │
+└─────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>2.2 多智能体协作流程</h3>
+  <div class="arch-diagram">
+用户输入学习需求
+       │
+       ▼
+┌──────────────┐
+│  画像Agent    │ ← 对话抽取学生特征，更新画像
+└──────┬───────┘
+       │ 学生画像 (6+维度)
+       ▼
+┌──────────────┐
+│  路径规划Agent │ ← 分析画像+需求，规划学习路径
+└──────┬───────┘
+       │ 学习路径 + 资源需求清单
+       ▼
+┌──────────────────────────────────────────┐
+│         资源生成智能体集群 (并行)            │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐     │
+│  │文档Agent │ │导图Agent │ │题库Agent │     │
+│  └─────────┘ └─────────┘ └─────────┘     │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐     │
+│  │视频Agent │ │代码Agent │ │阅读Agent │     │
+│  └─────────┘ └─────────┘ └─────────┘     │
+└──────────────────┬───────────────────────┘
+                   │ 生成的多模态资源
+                   ▼
+┌──────────────┐
+│  评估Agent    │ ← 跟踪学习行为，评估效果，反馈调整
+└──────────────┘
+  </div>
+
+  <h3>2.3 学生画像6个维度设计</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>维度</th>
+        <th>说明</th>
+        <th>数据来源</th>
+      </tr>
+      <tr>
+        <td>知识基础水平</td>
+        <td>各知识点掌握程度（0-100分值）</td>
+        <td>初始对话 + 练习测试</td>
+      </tr>
+      <tr>
+        <td>认知学习风格</td>
+        <td>视觉型/听觉型/阅读型/动手实践型</td>
+        <td>对话分析 + 行为数据</td>
+      </tr>
+      <tr>
+        <td>易错点偏好</td>
+        <td>常犯错误类型与知识点关联</td>
+        <td>练习记录 + 答疑历史</td>
+      </tr>
+      <tr>
+        <td>学习目标方向</td>
+        <td>考试导向/项目实战/科研深入/兴趣拓展</td>
+        <td>对话直接获取</td>
+      </tr>
+      <tr>
+        <td>学习节奏偏好</td>
+        <td>快节奏/中等/慢节奏，单次学习时长</td>
+        <td>对话 + 使用行为</td>
+      </tr>
+      <tr>
+        <td>兴趣方向偏好</td>
+        <td>偏好主题、技术方向、应用领域</td>
+        <td>对话 + 资源点击行为</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== 3. 技术栈总览 ==================== -->
+<div class="section" id="sec3">
+  <h2><span class="num">03</span> 技术栈总览与选型理由</h2>
+
+  <h3>3.1 技术栈一览表</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>层级</th>
+        <th>技术/工具</th>
+        <th>版本</th>
+        <th>选型理由</th>
+      </tr>
+      <tr>
+        <td rowspan="3"><span class="tag tag-backend">后端</span></td>
+        <td>Python</td>
+        <td>3.10+</td>
+        <td>AI生态最成熟的语言，与LLM库天然兼容</td>
+      </tr>
+      <tr>
+        <td>FastAPI</td>
+        <td>0.110+</td>
+        <td>异步高性能，原生支持SSE流式输出，自动生成API文档</td>
+      </tr>
+      <tr>
+        <td>Uvicorn / Gunicorn</td>
+        <td>latest</td>
+        <td>ASGI服务器，支撑异步并发</td>
+      </tr>
+      <tr>
+        <td rowspan="4"><span class="tag tag-ai">AI/智能体</span></td>
+        <td>CrewAI</td>
+        <td>0.40+</td>
+        <td>基于角色的多智能体框架，天然支持Agent分工协作，赛题核心要求</td>
+      </tr>
+      <tr>
+        <td>LangChain</td>
+        <td>0.2+</td>
+        <td>LLM编排、工具调用、RAG管道、文档加载器</td>
+      </tr>
+      <tr>
+        <td>讯飞星火大模型 API</td>
+        <td>4.0 Ultra</td>
+        <td>出题企业产品，评审友好，中文能力强</td>
+      </tr>
+      <tr>
+        <td>LangChain-SparkAdapter</td>
+        <td>自定义</td>
+        <td>将星火API适配为LangChain LLM接口</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><span class="tag tag-ai">RAG/知识库</span></td>
+        <td>Chroma</td>
+        <td>0.5+</td>
+        <td>轻量级向量数据库，无需额外部署，Python原生</td>
+      </tr>
+      <tr>
+        <td>BGE-M3 Embedding</td>
+        <td>latest</td>
+        <td>中英双语embedding模型，MTEB榜单领先</td>
+      </tr>
+      <tr>
+        <td>Unstructured / PyMuPDF</td>
+        <td>latest</td>
+        <td>多格式文档解析（PDF/PPT/Word/HTML）</td>
+      </tr>
+      <tr>
+        <td rowspan="4"><span class="tag tag-frontend">前端</span></td>
+        <td>React 18 + TypeScript</td>
+        <td>18.x</td>
+        <td>组件化开发，生态丰富，SSE流式渲染成熟</td>
+      </tr>
+      <tr>
+        <td>Ant Design</td>
+        <td>5.x</td>
+        <td>企业级UI组件库，中文文档完善，表格/表单/图表丰富</td>
+      </tr>
+      <tr>
+        <td>react-markdown + rehype</td>
+        <td>latest</td>
+        <td>Markdown渲染，支持代码高亮、数学公式、流程图</td>
+      </tr>
+      <tr>
+        <td>Mermaid.js</td>
+        <td>latest</td>
+        <td>前端渲染思维导图、流程图、知识图谱</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><span class="tag tag-ai">多模态生成</span></td>
+        <td>python-pptx</td>
+        <td>0.6+</td>
+        <td>程序化生成PPT文件</td>
+      </tr>
+      <tr>
+        <td>讯飞TTS (在线语音合成)</td>
+        <td>API</td>
+        <td>文本转语音，用于教学视频旁白</td>
+      </tr>
+      <tr>
+        <td>Manim / Remotion</td>
+        <td>latest</td>
+        <td>程序化生成教学动画/视频</td>
+      </tr>
+      <tr>
+        <td rowspan="4"><span class="tag tag-devops">数据/部署</span></td>
+        <td>PostgreSQL</td>
+        <td>16</td>
+        <td>存储用户数据、画像、学习记录、资源元数据</td>
+      </tr>
+      <tr>
+        <td>Redis</td>
+        <td>7.x</td>
+        <td>会话缓存、任务队列、流式输出缓冲</td>
+      </tr>
+      <tr>
+        <td>Docker + Docker Compose</td>
+        <td>latest</td>
+        <td>容器化部署，一键启动全部服务</td>
+      </tr>
+      <tr>
+        <td>Nginx</td>
+        <td>latest</td>
+        <td>反向代理、静态资源服务、SSE转发</td>
+      </tr>
+      <tr>
+        <td rowspan="2"><span class="tag tag-tool">讯飞工具链</span></td>
+        <td>iFlyCode / 讯飞星火编码助手</td>
+        <td>-</td>
+        <td>AI辅助编程工具（赛题要求使用讯飞相关工具）</td>
+      </tr>
+      <tr>
+        <td>讯飞开放平台（OCR/TTS/图像理解）</td>
+        <td>API</td>
+        <td>多模态能力增强，评审加分</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📋 关于多智能体框架的选型说明</div>
+    <p>赛题要求"须明确系统中多智能体协同框架"。推荐 <strong>CrewAI</strong> 的核心理由：</p>
+    <ul style="margin-top: 8px;">
+      <li><strong>角色驱动</strong>：天然支持为每个Agent定义角色（role）、目标（goal）、背景故事（backstory），完美匹配赛题"不同角色的智能体协作"的要求</li>
+      <li><strong>任务编排</strong>：支持顺序执行（sequential）和层级执行（hierarchical），可用于"路径规划Agent分发任务给资源生成Agent"</li>
+      <li><strong>工具集成</strong>：每个Agent可绑定不同工具（搜索、代码执行、文档生成等），实现5种以上资源类型的分别生成</li>
+      <li><strong>学习成本低</strong>：API设计简洁，文档完善，社区活跃</li>
+    </ul>
+    <p>备选方案：<strong>AutoGen</strong>（微软，对话式多智能体）或 <strong>LangGraph</strong>（基于状态图，更灵活但更复杂）。</p>
+  </div>
+</div>
+
+<!-- ==================== 4. 项目初始化 ==================== -->
+<div class="section" id="sec4">
+  <h2><span class="num">04</span> 第一步：项目初始化与开发环境搭建</h2>
+
+  <div class="step-card">
+    <div class="step-card-header">
+      <h4>4.1 项目结构规划</h4>
+    </div>
+    <div class="tech-list">
+      <span class="tag tag-devops">Docker</span>
+      <span class="tag tag-backend">Python</span>
+      <span class="tag tag-tool">Poetry</span>
+    </div>
+    <pre><code>learning-multiagent/
+├── backend/                    # 后端服务
+│   ├── app/
+│   │   ├── main.py             # FastAPI入口
+│   │   ├── api/                # API路由
+│   │   │   ├── chat.py         # 对话接口（SSE流式）
+│   │   │   ├── profile.py      # 画像接口
+│   │   │   ├── resource.py     # 资源生成接口
+│   │   │   └── path.py         # 学习路径接口
+│   │   ├── agents/             # 多智能体定义
+│   │   │   ├── profile_agent.py
+│   │   │   ├── doc_agent.py
+│   │   │   ├── mindmap_agent.py
+│   │   │   ├── quiz_agent.py
+│   │   │   ├── video_agent.py
+│   │   │   ├── code_agent.py
+│   │   │   ├── reading_agent.py
+│   │   │   ├── path_agent.py
+│   │   │   ├── tutor_agent.py
+│   │   │   └── eval_agent.py
+│   │   ├── core/               # 核心配置
+│   │   │   ├── llm.py          # 星火大模型适配
+│   │   │   ├── rag.py          # RAG检索引擎
+│   │   │   └── config.py       # 全局配置
+│   │   ├── models/             # 数据模型
+│   │   ├── services/           # 业务逻辑
+│   │   └── utils/              # 工具函数
+│   ├── knowledge_base/         # 课程知识库数据
+│   ├── tests/
+│   ├── pyproject.toml
+│   └── Dockerfile
+├── frontend/                   # 前端应用
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── hooks/
+│   │   ├── services/           # API调用
+│   │   └── stores/             # 状态管理
+│   ├── package.json
+│   └── Dockerfile
+├── docker-compose.yml
+├── .env.example
+└── README.md</code></pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header">
+      <h4>4.2 后端环境搭建</h4>
+    </div>
+    <div class="tech-list">
+      <span class="tag tag-backend">Python 3.10+</span>
+      <span class="tag tag-tool">Poetry</span>
+      <span class="tag tag-backend">FastAPI</span>
+      <span class="tag tag-ai">CrewAI</span>
+      <span class="tag tag-ai">LangChain</span>
+    </div>
+    <pre><code># 1. 创建项目并初始化
+mkdir learning-multiagent && cd learning-multiagent
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 2. 安装核心依赖
+pip install fastapi uvicorn[standard] \
+    crewai langchain langchain-community \
+    chromadb sentence-transformers \
+    python-pptx pymupdf unstructured \
+    psycopg2-binary redis python-dotenv \
+    sse-starlette pydantic
+
+# 3. 讯飞星火SDK
+pip install spark-ai-python  # 讯飞官方Python SDK
+
+# 4. 初始化项目配置
+# pyproject.toml 或 requirements.txt 管理依赖</code></pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header">
+      <h4>4.3 前端环境搭建</h4>
+    </div>
+    <div class="tech-list">
+      <span class="tag tag-frontend">React 18</span>
+      <span class="tag tag-frontend">TypeScript</span>
+      <span class="tag tag-frontend">Vite</span>
+      <span class="tag tag-frontend">Ant Design</span>
+    </div>
+    <pre><code># 使用Vite创建React+TS项目
+npm create vite@latest frontend -- --template react-ts
+cd frontend
+
+# 安装核心依赖
+npm install antd @ant-design/icons \
+    axios react-markdown remark-gfm \
+    rehype-highlight rehype-katex \
+    mermaid katex \
+    zustand  # 状态管理</code></pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header">
+      <h4>4.4 注册科大讯飞开放平台并获取API密钥</h4>
+    </div>
+    <div class="tech-list">
+      <span class="tag tag-ai">讯飞星火API</span>
+      <span class="tag tag-ai">讯飞TTS</span>
+      <span class="tag tag-tool">讯飞开放平台</span>
+    </div>
+    <ol>
+      <li>访问 <code>https://www.xfyun.cn/</code> 注册账号</li>
+      <li>创建应用，获取 <strong>APPID</strong>、<strong>APIKey</strong>、<strong>APISecret</strong></li>
+      <li>开通以下服务：
+        <ul>
+          <li>星火认知大模型（推荐 4.0 Ultra 或 Max 版本）</li>
+          <li>在线语音合成（TTS）— 用于教学视频配音</li>
+          <li>通用文字识别 OCR — 用于解析上传的课程资料</li>
+        </ul>
+      </li>
+      <li>记录密钥到 <code>.env</code> 文件中</li>
+    </ol>
+    <pre><code># .env
+SPARK_APPID=your_appid
+SPARK_API_KEY=your_api_key
+SPARK_API_SECRET=your_api_secret
+SPARK_DOMAIN=4.0Ultra
+TTS_APPID=your_tts_appid
+TTS_API_KEY=your_tts_api_key
+TTS_API_SECRET=your_tts_api_secret</code></pre>
+  </div>
+</div>
+
+<!-- ==================== 5. 多智能体框架 ==================== -->
+<div class="section" id="sec5">
+  <h2><span class="num">05</span> 第二步：多智能体框架搭建</h2>
+
+  <p>这是整个系统的<strong>核心骨架</strong>。使用 CrewAI 定义所有智能体角色，并建立协作编排机制。</p>
+
+  <h3>5.1 大模型适配层</h3>
+  <p>首先将讯飞星火大模型适配为 CrewAI / LangChain 可用的 LLM 接口：</p>
+  <pre><code># backend/app/core/llm.py
+from sparkai.llm.llm import ChatSparkLLM
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from typing import List, Optional, Any
+import os
+
+class SparkLLMAdapter(BaseChatModel):
+    """将讯飞星火大模型适配为LangChain接口"""
+
+    spark: ChatSparkLLM = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.spark = ChatSparkLLM(
+            app_id=os.getenv("SPARK_APPID"),
+            api_key=os.getenv("SPARK_API_KEY"),
+            api_secret=os.getenv("SPARK_API_SECRET"),
+            domain=os.getenv("SPARK_DOMAIN", "4.0Ultra"),
+            temperature=0.7,
+            streaming=True,  # 启用流式输出
+        )
+
+    def _generate(self, messages: List[BaseMessage],
+                  stop: Optional[List[str]] = None,
+                  **kwargs) -> ChatResult:
+        # 转换消息格式并调用星火API
+        spark_messages = [{"role": m.type, "content": m.content}
+                         for m in messages]
+        response = self.spark.generate([spark_messages])
+        # ...解析响应并返回ChatResult
+        pass
+
+    async def _astream(self, messages, **kwargs):
+        """异步流式输出，用于SSE前端推送"""
+        async for chunk in self.spark.astream(messages):
+            yield chunk
+
+    @property
+    def _llm_type(self) -> str:
+        return "spark-llm"</code></pre>
+
+  <h3>5.2 智能体定义</h3>
+  <p>使用 CrewAI 定义各个角色的智能体。以下以"文档生成Agent"和"画像构建Agent"为例：</p>
+  <pre><code># backend/app/agents/profile_agent.py
+from crewai import Agent, Task, Crew, Process
+from app.core.llm import SparkLLMAdapter
+from app.core.rag import RAGRetriever
+
+llm = SparkLLMAdapter()
+rag = RAGRetriever()
+
+# ===== 画像构建Agent =====
+profile_agent = Agent(
+    role='学习画像分析师',
+    goal='通过自然语言对话，精准分析学生的学习特征，'
+         '构建包含知识基础、认知风格、易错点偏好、学习目标、'
+         '学习节奏、兴趣方向等6个以上维度的动态学生画像',
+    backstory='你是一位资深教育心理学专家和数据分析师，'
+              '擅长通过对话快速洞察学生的学习特征。'
+              '你需要用友好的对话方式引导学生分享信息，'
+              '并实时将对话内容结构化为学生画像数据。',
+    llm=llm,
+    tools=[rag.search_tool],  # 可搜索知识库辅助判断
+    verbose=True
+)
+
+# ===== 文档生成Agent =====
+doc_agent = Agent(
+    role='课程文档撰写专家',
+    goal='根据学生画像和学习需求，生成高质量的专业课程讲解文档，'
+         '内容准确、结构清晰、适合学生的认知水平',
+    backstory='你是一位经验丰富的大学教授和教材编写专家，'
+              '擅长将复杂的知识用通俗易懂的方式讲解。'
+              '你能根据学生的知识基础和认知风格调整讲解深度和方式。',
+    llm=llm,
+    tools=[rag.search_tool],  # RAG检索保证内容准确性
+    verbose=True
+)
+
+# ===== 思维导图Agent =====
+mindmap_agent = Agent(
+    role='知识结构可视化专家',
+    goal='将知识点组织为层次分明的思维导图，帮助学生建立知识体系',
+    backstory='你是一位知识管理专家，擅长将零散知识点组织为'
+              '清晰的树状结构，并输出Markdown格式思维导图。',
+    llm=llm,
+    tools=[rag.search_tool],
+    verbose=True
+)
+
+# ===== 题库生成Agent =====
+quiz_agent = Agent(
+    role='练习题设计专家',
+    goal='根据学生水平和易错点，生成多种类型的练习题'
+         '（选择/填空/简答/编程题），含答案和解析',
+    backstory='你是一位资深命题专家，了解高校各学科的'
+              '常见考点和学生易错点，能精准设计针对性练习。',
+    llm=llm,
+    tools=[rag.search_tool],
+    verbose=True
+)
+
+# ===== 视频脚本Agent =====
+video_agent = Agent(
+    role='多模态教学视频设计师',
+    goal='设计并生成教学视频/动画，包括分镜脚本、旁白文本、'
+         '配图描述，并调用TTS生成语音',
+    backstory='你是一位教育视频导演，擅长将知识点转化为'
+              '生动的视觉叙事，并编写分镜脚本。',
+    llm=llm,
+    tools=[rag.search_tool, tts_tool],  # TTS工具
+    verbose=True
+)
+
+# ===== 代码实操Agent =====
+code_agent = Agent(
+    role='代码实践指导专家',
+    goal='生成与课程相关的代码实操案例，含完整可运行代码、'
+         '详细注释和分步说明',
+    backstory='你是一位资深工程师和教育者，擅长设计循序渐进的'
+              '编程实践案例，让学生在实践中掌握知识。',
+    llm=llm,
+    tools=[rag.search_tool, code_execution_tool],
+    verbose=True
+)
+
+# ===== 拓展阅读Agent =====
+reading_agent = Agent(
+    role='学习资源推荐专家',
+    goal='根据学生兴趣和学习进度，推荐精准的拓展阅读材料',
+    backstory='你是一位学术资源顾问，熟悉各领域的经典文献、'
+              '教程和在线资源，能精准匹配学生需求。',
+    llm=llm,
+    tools=[rag.search_tool, web_search_tool],
+    verbose=True
+)
+
+# ===== 路径规划Agent =====
+path_agent = Agent(
+    role='学习路径规划师',
+    goal='综合分析学生画像和生成资源，规划科学、动态的个性化学习路径',
+    backstory='你是一位教育规划专家，能根据学生的知识基础、'
+              '学习目标和节奏，设计最优学习路径和资源推送顺序。',
+    llm=llm,
+    verbose=True
+)
+
+# ===== 智能辅导Agent（加分项）=====
+tutor_agent = Agent(
+    role='智能辅导老师',
+    goal='为学生提供即时多模态答疑，包括文字解答、图解说明、短视频讲解',
+    backstory='你是一位耐心的辅导老师，擅长用多种方式解释问题，'
+              '能根据学生画像调整解答方式。',
+    llm=llm,
+    tools=[rag.search_tool, tts_tool],
+    verbose=True
+)
+
+# ===== 评估Agent（加分项）=====
+eval_agent = Agent(
+    role='学习效果评估师',
+    goal='跟踪分析学习行为数据，多维度评估学习效果，动态调整学习方案',
+    backstory='你是一位教育数据分析师，擅长从学习行为中提取'
+              '洞察，并给出精准的评估报告和优化建议。',
+    llm=llm,
+    verbose=True
+)</code></pre>
+
+  <h3>5.3 任务编排与Crew定义</h3>
+  <pre><code># backend/app/agents/crew.py
+from crewai import Crew, Process
+
+def create_resource_generation_crew(student_profile, learning_request):
+    """创建资源生成Crew：路径规划Agent分发任务给各资源生成Agent"""
+
+    # 任务1：路径规划
+    path_task = Task(
+        description=f'''分析以下学生画像和学习需求，规划学习路径并确定
+        需要生成的资源类型和内容方向。
+
+        学生画像：{student_profile}
+        学习需求：{learning_request}
+
+        输出：学习路径规划（JSON格式），包含资源需求清单。''',
+        agent=path_agent,
+        expected_output="JSON格式的学习路径规划"
+    )
+
+    # 任务2-7：各资源生成Agent并行工作
+    doc_task = Task(
+        description="根据路径规划结果，生成专业课程讲解文档（Markdown）",
+        agent=doc_agent,
+        expected_output="Markdown格式的课程文档",
+        context=[path_task]  # 依赖路径规划结果
+    )
+
+    mindmap_task = Task(
+        description="根据路径规划结果，生成知识点思维导图（Markdown嵌套列表）",
+        agent=mindmap_agent,
+        expected_output="Markdown格式的思维导图",
+        context=[path_task]
+    )
+
+    quiz_task = Task(
+        description="根据路径规划结果，生成多种类型练习题及答案解析",
+        agent=quiz_agent,
+        expected_output="JSON格式的题库",
+        context=[path_task]
+    )
+
+    video_task = Task(
+        description="根据路径规划结果，设计教学视频脚本并生成语音",
+        agent=video_agent,
+        expected_output="视频脚本JSON + 音频文件路径",
+        context=[path_task]
+    )
+
+    code_task = Task(
+        description="根据路径规划结果，生成代码实操案例",
+        agent=code_agent,
+        expected_output="代码文件 + 说明文档",
+        context=[path_task]
+    )
+
+    reading_task = Task(
+        description="根据路径规划结果，推荐拓展阅读材料",
+        agent=reading_agent,
+        expected_output="阅读资源清单JSON",
+        context=[path_task]
+    )
+
+    # 组建Crew（层级模式：路径规划Agent作为管理者）
+    crew = Crew(
+        agents=[path_agent, doc_agent, mindmap_agent, quiz_agent,
+                video_agent, code_agent, reading_agent],
+        tasks=[path_task, doc_task, mindmap_task, quiz_task,
+               video_task, code_task, reading_task],
+        process=Process.hierarchical,  # 层级模式，路径Agent作为manager
+        manager_llm=llm,
+        verbose=True
+    )
+
+    return crew</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">⚠️ 注意事项</div>
+    <ul>
+      <li>每个Agent必须绑定<strong>不同的角色、目标和工具</strong>，这是"多智能体"评审的关键</li>
+      <li>使用 <code>Process.hierarchical</code> 让路径规划Agent作为管理者分发任务，体现"协同工作机制"</li>
+      <li>在文档中必须<strong>明确画出智能体协作架构图</strong>，标注每个Agent的角色和交互关系</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 6. 知识库与RAG ==================== -->
+<div class="section" id="sec6">
+  <h2><span class="num">06</span> 第三步：知识库构建与RAG系统</h2>
+
+  <p>赛题要求"参赛团队需自行构造至少一门完整高校专业课程的初始知识库/文档集作为系统输入"。这是防幻觉和内容准确性的基础。</p>
+
+  <h3>6.1 知识库构建</h3>
+  <div class="step-card">
+    <div class="tech-list">
+      <span class="tag tag-ai">PyMuPDF</span>
+      <span class="tag tag-ai">Unstructured</span>
+      <span class="tag tag-ai">Chroma</span>
+      <span class="tag tag-ai">BGE-M3</span>
+    </div>
+    <h4>选择一门课程构建知识库</h4>
+    <p>建议选择<strong>"人工智能导论"</strong>或<strong>"数据结构与算法"</strong>这类知识点明确、资料丰富的课程。知识库来源：</p>
+    <ul>
+      <li>课程教材 PDF（电子版）</li>
+      <li>课程 PPT 课件</li>
+      <li>经典论文/技术博客</li>
+      <li>在线课程讲义（如MIT 6.034、吴恩达机器学习等公开课资料）</li>
+    </ul>
+  </div>
+
+  <h3>6.2 RAG 检索系统实现</h3>
+  <pre><code># backend/app/core/rag.py
+from langchain_community.document_loaders import (
+    PyMuPDFLoader, UnstructuredPowerPointLoader,
+    UnstructuredWordDocumentLoader, WebBaseLoader
+)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.tools import Tool
+
+class RAGRetriever:
+    """RAG检索引擎：文档加载 → 分块 → 向量化 → 检索"""
+
+    def __init__(self):
+        # 使用BGE-M3中文embedding模型
+        self.embeddings = HuggingFaceBgeEmbeddings(
+            model_name="BAAI/bge-m3",
+            model_kwargs={"device": "cpu"},  # 无GPU时用CPU
+        )
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50,
+            separators=["\n\n", "\n", "。", ".", " "]
+        )
+        self.vectorstore = None
+        self.search_tool = None
+
+    def build_index(self, docs_dir: str):
+        """从目录加载所有文档并构建向量索引"""
+        import glob
+        documents = []
+        for pdf_path in glob.glob(f"{docs_dir}/*.pdf"):
+            documents.extend(PyMuPDFLoader(pdf_path).load())
+        for pptx_path in glob.glob(f"{docs_dir}/*.pptx"):
+            documents.extend(UnstructuredPowerPointLoader(pptx_path).load())
+        for docx_path in glob.glob(f"{docs_dir}/*.docx"):
+            documents.extend(UnstructuredWordDocumentLoader(docx_path).load())
+
+        # 分块
+        chunks = self.text_splitter.split_documents(documents)
+
+        # 构建向量库
+        self.vectorstore = Chroma.from_documents(
+            chunks, self.embeddings,
+            persist_directory="./chroma_db"
+        )
+
+        # 创建检索工具供Agent使用
+        self.search_tool = Tool(
+            name="knowledge_search",
+            description="搜索课程知识库获取准确知识点信息",
+            func=self._search
+        )
+
+    def _search(self, query: str, k: int = 5) -> str:
+        """检索知识库"""
+        results = self.vectorstore.similarity_search(query, k=k)
+        return "\n\n".join([doc.page_content for doc in results])</code></pre>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 RAG是防幻觉的关键</div>
+    <p>所有资源生成Agent在调用大模型时，都应先通过RAG检索知识库获取准确内容，再将检索结果作为上下文传给大模型。这样生成的文档、题库等内容就有可靠的知识来源，大幅降低幻觉风险。在文档中要重点说明这一机制。</p>
+  </div>
+</div>
+
+<!-- ==================== 7. 对话式画像构建 ==================== -->
+<div class="section" id="sec7">
+  <h2><span class="num">07</span> 第四步：对话式学习画像构建</h2>
+
+  <p>实现功能需求第1项：通过自然语言对话自动抽取学生特征，构建≥6个维度的动态画像。</p>
+
+  <h3>7.1 实现思路</h3>
+  <ol>
+    <li><strong>多轮对话引导</strong>：画像Agent通过友好的多轮对话，引导学生分享专业、年级、学习目标、已有知识基础等信息</li>
+    <li><strong>结构化抽取</strong>：每轮对话后，调用大模型从对话内容中抽取6个维度的特征，输出为结构化JSON</li>
+    <li><strong>动态更新</strong>：后续学习行为（答题正确率、资源点击偏好等）也会反馈更新画像</li>
+    <li><strong>流式输出</strong>：Agent回复通过SSE流式推送到前端，避免等待</li>
+  </ol>
+
+  <h3>7.2 核心代码</h3>
+  <pre><code># backend/app/api/chat.py
+from fastapi import APIRouter
+from sse_starlette.sse import EventSourceResponse
+from app.agents.profile_agent import profile_agent
+from app.core.llm import SparkLLMAdapter
+
+router = APIRouter()
+
+@router.post("/chat/profile")
+async def chat_for_profile(request: dict):
+    """对话式画像构建 - SSE流式输出"""
+    user_message = request["message"]
+    session_id = request["session_id"]
+
+    async def event_generator():
+        # 1. 调用画像Agent处理用户消息
+        # 2. 流式输出Agent回复
+        # 3. 后台抽取画像维度并更新数据库
+        async for chunk in llm.astream(
+            build_profile_prompt(user_message, session_id)
+        ):
+            yield {"event": "message", "data": chunk}
+
+        # 4. 抽取并更新画像
+        profile_update = await extract_profile_dimensions(
+            user_message, session_id
+        )
+        await update_student_profile(session_id, profile_update)
+
+        yield {"event": "profile_updated", "data": profile_update}
+
+    return EventSourceResponse(event_generator())
+
+
+async def extract_profile_dimensions(message, session_id):
+    """从对话中抽取6个维度的画像数据"""
+    prompt = f"""分析以下学生对话内容，提取学习画像信息。
+    必须输出以下6个维度的JSON：
+    {{
+      "knowledge_level": "知识基础水平(初学/基础/中等/进阶)",
+      "cognitive_style": "认知风格(视觉型/听觉型/阅读型/实践型)",
+      "error_patterns": ["易错点类型列表"],
+      "learning_goal": "学习目标(考试/项目/科研/兴趣)",
+      "learning_pace": "学习节奏(快速/中等/慢速)",
+      "interests": ["兴趣方向列表"]
+    }}
+    对话内容：{message}
+    无法判断的维度填null，不要编造信息。"""
+
+    result = await llm.ainvoke(prompt)
+    return parse_json(result)  # 解析JSON输出</code></pre>
+
+  <h3>7.3 画像存储模型</h3>
+  <pre><code># 数据库表设计
+CREATE TABLE student_profiles (
+    id SERIAL PRIMARY KEY,
+    session_id VARCHAR(64) UNIQUE,
+    knowledge_level JSONB,      -- 各知识点掌握度
+    cognitive_style VARCHAR(32),
+    error_patterns JSONB,        -- 易错点记录
+    learning_goal VARCHAR(64),
+    learning_pace VARCHAR(32),
+    interests JSONB,
+    raw_conversations JSONB,    -- 原始对话记录
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);</code></pre>
+</div>
+
+<!-- ==================== 8. 多智能体资源生成 ==================== -->
+<div class="section" id="sec8">
+  <h2><span class="num">08</span> 第五步：多智能体协同资源生成</h2>
+
+  <p>实现功能需求第2项：不同角色智能体协作生成≥5种类型资源。这是赛题的核心，也是评分占比最大的部分。</p>
+
+  <h3>8.1 五种资源类型与生成方案</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>资源类型</th>
+        <th>负责Agent</th>
+        <th>输出格式</th>
+        <th>技术实现</th>
+      </tr>
+      <tr>
+        <td>专业课程讲解文档</td>
+        <td>文档Agent</td>
+        <td>Markdown / PDF</td>
+        <td>RAG检索 → LLM生成 → Markdown渲染</td>
+      </tr>
+      <tr>
+        <td>知识点思维导图</td>
+        <td>导图Agent</td>
+        <td>Markdown / Mermaid</td>
+        <td>LLM生成层次结构 → Mermaid前端渲染</td>
+      </tr>
+      <tr>
+        <td>练习题库</td>
+        <td>题库Agent</td>
+        <td>JSON</td>
+        <td>LLM生成题目+答案+解析 → 结构化存储</td>
+      </tr>
+      <tr>
+        <td>多模态教学视频/动画</td>
+        <td>视频Agent</td>
+        <td>视频脚本+音频+图片</td>
+        <td>LLM生成分镜脚本 → 讯飞TTS配音 → 图片合成</td>
+      </tr>
+      <tr>
+        <td>代码实操案例</td>
+        <td>代码Agent</td>
+        <td>代码文件+文档</td>
+        <td>LLM生成代码 → 代码执行验证 → 注释说明</td>
+      </tr>
+      <tr>
+        <td>拓展阅读材料</td>
+        <td>阅读Agent</td>
+        <td>资源清单JSON</td>
+        <td>RAG+Web搜索 → LLM筛选推荐</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📊 资源类型数量</div>
+    <p>赛题要求"至少5种类型"，上表列出了6种，超出最低要求。建议全部实现，在"功能实现及技术要求"评分项中获得更高分数。</p>
+  </div>
+
+  <h3>8.2 多模态教学视频生成方案（重点亮点）</h3>
+  <p>这是最具技术挑战性的资源类型，也是创新加分点：</p>
+  <pre><code># backend/app/agents/video_agent.py
+
+class VideoGenerationTool:
+    """多模态教学视频生成工具"""
+
+    async def generate_educational_video(
+        self, topic: str, knowledge_content: str,
+        student_style: str
+    ) -> dict:
+        """生成教学视频：分镜脚本 → TTS配音 → 配图 → 合成"""
+
+        # 步骤1：LLM生成视频分镜脚本
+        script = await llm.ainvoke(f"""
+        为知识点"{topic}"设计一个3-5分钟的教学视频分镜脚本。
+        内容基于以下知识：{knowledge_content}
+        学生认知风格：{student_style}
+
+        输出JSON格式：
+        {{
+          "scenes": [
+            {{
+              "scene_id": 1,
+              "narration": "旁白文本（用于TTS）",
+              "visual_description": "画面描述（用于配图或动画）",
+              "duration": 15
+            }}
+          ]
+        }}
+        """)
+
+        # 步骤2：调用讯飞TTS生成每个场景的语音
+        audio_files = []
+        for scene in script["scenes"]:
+            audio = await spark_tts.synthesize(
+                text=scene["narration"],
+                voice="xiaoyan",  # 讯飞语音人
+                speed=1.0
+            )
+            audio_files.append(audio)
+
+        # 步骤3：根据画面描述生成配图
+        # 可选方案：
+        #   a) 使用讯飞图像生成API
+        #   b) 使用Matplotlib/Manim生成知识图解
+        #   c) 从知识库中检索相关配图
+        images = await self._generate_visuals(
+            script["scenes"], topic
+        )
+
+        # 步骤4：合成视频
+        # 使用ffmpeg将音频+图片合成为视频
+        video_path = await self._compose_video(
+            audio_files, images, script["scenes"]
+        )
+
+        return {
+            "video_path": video_path,
+            "script": script,
+            "duration": sum(s["duration"] for s in script["scenes"])
+        }</code></pre>
+
+  <h3>8.3 流式生成进度追踪</h3>
+  <p>赛题非功能需求要求"生成进度追踪或流式呈现"。通过SSE实现：</p>
+  <pre><code># 前端接收资源生成进度
+const eventSource = new EventSource(
+  `/api/resource/generate?session=${sessionId}&request=${encodeURIComponent(req)}`
+);
+
+eventSource.addEventListener('agent_start', (e) => {
+  // 显示"文档Agent开始工作..."
+  updateProgress(e.data.agent_name, 'started');
+});
+
+eventSource.addEventListener('agent_complete', (e) => {
+  // 显示"文档Agent完成，思维导图Agent开始..."
+  updateProgress(e.data.agent_name, 'completed');
+  if (e.data.resource) {
+    addResourceCard(e.data.resource);  // 添加资源卡片
+  }
+});
+
+eventSource.addEventListener('all_complete', (e) => {
+  // 所有资源生成完成
+  showComplete();
+});</code></pre>
+</div>
+
+<!-- ==================== 9. 学习路径规划 ==================== -->
+<div class="section" id="sec9">
+  <h2><span class="num">09</span> 第六步：个性化学习路径规划</h2>
+
+  <p>实现功能需求第3项：依托多智能体协同，整合资源，规划动态学习路径，精准推送。</p>
+
+  <h3>9.1 路径规划逻辑</h3>
+  <pre><code>路径规划Agent工作流程：
+1. 输入：学生画像 + 学习需求 + 已生成资源列表
+2. 分析：
+   a. 根据知识基础确定起点（跳过已掌握内容）
+   b. 根据认知风格确定资源类型偏好（视觉型→视频/导图优先）
+   c. 根据学习目标确定深度（考试→题库优先，项目→代码实操优先）
+   d. 根据学习节奏确定单次学习量
+3. 输出：有序的学习路径（JSON）
+
+路径示例：
+{
+  "path_id": "path_001",
+  "total_steps": 8,
+  "estimated_time": "2.5h",
+  "steps": [
+    {
+      "step": 1,
+      "resource_id": "doc_001",
+      "resource_type": "讲解文档",
+      "title": "神经网络基础概念",
+      "estimated_time": "20min",
+      "reason": "作为入门，建立基础认知"
+    },
+    {
+      "step": 2,
+      "resource_id": "mindmap_001",
+      "resource_type": "思维导图",
+      "title": "神经网络知识体系",
+      "estimated_time": "10min",
+      "reason": "梳理知识结构，适合视觉型学习者"
+    },
+    // ... 后续步骤
+  ]
+}</code></pre>
+
+  <h3>9.2 动态调整机制</h3>
+  <p>学习路径不是静态的。当学生完成某个步骤后（如做完题库），评估Agent分析答题正确率：</p>
+  <ul>
+    <li>正确率 > 80%：跳过同类基础资源，进入进阶内容</li>
+    <li>正确率 60%-80%：正常推进，推荐补充阅读</li>
+    <li>正确率 < 60%：回退一步，生成更基础的讲解资源</li>
+  </ul>
+</div>
+
+<!-- ==================== 10. 加分项 ==================== -->
+<div class="section" id="sec10">
+  <h2><span class="num">10</span> 第七步：智能辅导与学习效果评估（加分项）</h2>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 为什么一定要做加分项</div>
+    <p>功能实现占45%，两个加分项能在这45%中显著拉开与只做必做功能队伍的差距。且"创新价值与实用性"35%中，完整的闭环系统（学习→练习→评估→调整）本身就是创新亮点。</p>
+  </div>
+
+  <h3>10.1 智能辅导Agent</h3>
+  <p>当学生在学习过程中提问时，辅导Agent提供多模态答疑：</p>
+  <pre><code>智能辅导流程：
+1. 学生提问 → 辅导Agent接收
+2. RAG检索知识库获取准确答案依据
+3. 大模型生成文字解答
+4. 判断问题类型：
+   - 概念性问题 → 生成图解说明（Mermaid流程图/示意图）
+   - 操作性问题 → 生成代码示例
+   - 复杂问题 → 生成短视频讲解脚本 → TTS配音
+5. 多模态回答推送到前端（文字+图解+语音）</code></pre>
+
+  <h3>10.2 学习效果评估Agent</h3>
+  <pre><code>评估维度设计：
+├── 知识掌握度（题库正确率、知识点覆盖率）
+├── 学习行为分析（学习时长、资源完成率、复习频率）
+├── 进步趋势（相同知识点不同时间正确率变化）
+├── 薄弱环节识别（错误集中在哪些知识点）
+└── 学习建议（下一步推荐、需加强的内容）
+
+评估输出示例：
+{
+  "overall_score": 78,
+  "knowledge_mastery": {
+    "神经网络基础": 85,
+    "反向传播": 62,
+    "CNN": 45
+  },
+  "weak_points": ["CNN卷积操作", "反向传播梯度计算"],
+  "progress_trend": "上升",
+  "recommendations": [
+    "建议复习CNN的卷积核概念",
+    "推荐完成反向传播的代码实操案例"
+  ],
+  "profile_update": {
+    "error_patterns": ["梯度计算方向混淆"],
+    "knowledge_level": {"CNN": "初学"}
+  }
+}</code></pre>
+</div>
+
+<!-- ==================== 11. 前端开发 ==================== -->
+<div class="section" id="sec11">
+  <h2><span class="num">11</span> 第八步：前端界面开发</h2>
+
+  <h3>11.1 页面规划</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>页面</th>
+        <th>功能</th>
+        <th>关键组件</th>
+      </tr>
+      <tr>
+        <td>对话首页</td>
+        <td>画像构建对话 + 智能辅导</td>
+        <td>ChatBox（流式输出）、画像雷达图</td>
+      </tr>
+      <tr>
+        <td>学习中心</td>
+        <td>资源生成 + 资源浏览</td>
+        <td>资源卡片网格、生成进度条、Markdown渲染</td>
+      </tr>
+      <tr>
+        <td>学习路径</td>
+        <td>路径可视化 + 步骤导航</td>
+        <td>Timeline时间线、进度追踪</td>
+      </tr>
+      <tr>
+        <td>评估面板</td>
+        <td>学习效果展示</td>
+        <td>雷达图、趋势折线图、薄弱点标注</td>
+      </tr>
+      <tr>
+        <td>资源详情</td>
+        <td>查看各类资源</td>
+        <td>Markdown查看器、思维导图渲染、视频播放器、代码高亮</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>11.2 关键前端技术点</h3>
+
+  <div class="step-card">
+    <h4>SSE流式输出实现</h4>
+    <div class="tech-list">
+      <span class="tag tag-frontend">React</span>
+      <span class="tag tag-frontend">EventSource</span>
+      <span class="tag tag-frontend">SSE</span>
+    </div>
+    <pre><code>// 流式对话组件
+function ChatStream() {
+  const [messages, setMessages] = useState([]);
+  const [streaming, setStreaming] = useState(false);
+
+  const sendMessage = async (text) => {
+    setStreaming(true);
+    const eventSource = new EventSource(
+      `/api/chat/profile?message=${encodeURIComponent(text)}`
+    );
+
+    let currentMsg = '';
+    eventSource.onmessage = (e) => {
+      currentMsg += e.data;
+      // 实时更新消息内容（打字机效果）
+      setMessages(prev => updateLastMessage(prev, currentMsg));
+    };
+
+    eventSource.addEventListener('profile_updated', (e) => {
+      // 画像更新，刷新雷达图
+      updateProfileRadar(JSON.parse(e.data));
+    });
+
+    eventSource.onerror = () => {
+      setStreaming(false);
+      eventSource.close();
+    };
+  };
+}</code></pre>
+  </div>
+
+  <div class="step-card">
+    <h4>Markdown渲染 + Mermaid思维导图</h4>
+    <div class="tech-list">
+      <span class="tag tag-frontend">react-markdown</span>
+      <span class="tag tag-frontend">Mermaid.js</span>
+      <span class="tag tag-frontend">rehype-highlight</span>
+    </div>
+    <pre><code>// Markdown渲染组件（支持代码高亮、数学公式、流程图）
+function MarkdownRenderer({ content }) {
+  return (
+    &lt;ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeHighlight, rehypeKatex]}
+      components={{
+        code({ inline, className, children }) {
+          // 检测mermaid代码块并渲染为图形
+          if (className === 'language-mermaid') {
+            return &lt;Mermaid chart={children} />;
+          }
+          return &lt;code className={className}&gt;{children}&lt;/code&gt;;
+        }
+      }}
+    &gt;
+      {content}
+    &lt;/ReactMarkdown&gt;
+  );
+}</code></pre>
+  </div>
+
+  <div class="step-card">
+    <h4>学生画像雷达图</h4>
+    <div class="tech-list">
+      <span class="tag tag-frontend">Ant Design Charts</span>
+      <span class="tag tag-frontend">Radar Chart</span>
+    </div>
+    <pre><code>// 画像6维度雷达图
+import { Radar } from '@ant-design/charts';
+
+function ProfileRadar({ profile }) {
+  const data = [
+    { dimension: '知识基础', value: profile.knowledge_score },
+    { dimension: '认知风格匹配', value: profile.style_match },
+    { dimension: '学习目标明确度', value: profile.goal_clarity },
+    { dimension: '学习节奏适应', value: profile.pace_fit },
+    { dimension: '兴趣覆盖', value: profile.interest_breadth },
+    { dimension: '易错点改善', value: profile.improvement },
+  ];
+
+  return &lt;Radar data={data} xField="dimension" yField="value" /&gt;;
+}</code></pre>
+  </div>
+</div>
+
+<!-- ==================== 12. 防幻觉与安全 ==================== -->
+<div class="section" id="sec12">
+  <h2><span class="num">12</span> 第九步：防幻觉与内容安全机制</h2>
+
+  <p>赛题明确要求"完善的防幻觉与内容安全过滤机制"，这是非功能性需求中的硬性要求。</p>
+
+  <h3>12.1 防幻觉机制（四层防护）</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>层级</th>
+        <th>机制</th>
+        <th>技术实现</th>
+      </tr>
+      <tr>
+        <td>第一层：检索约束</td>
+        <td>RAG提供知识来源</td>
+        <td>所有生成任务先检索知识库，将检索结果作为上下文约束LLM</td>
+      </tr>
+      <tr>
+        <td>第二层：Prompt约束</td>
+        <td>系统提示词限制</td>
+        <td>在System Prompt中明确"仅基于提供的知识库内容回答，不确定时说明"</td>
+      </tr>
+      <tr>
+        <td>第三层：事实核查</td>
+        <td>生成后交叉验证</td>
+        <td>生成内容后再用RAG检索相关知识点，检查是否一致</td>
+      </tr>
+      <tr>
+        <td>第四层：引用标注</td>
+        <td>标注知识来源</td>
+        <td>在生成的文档中标注内容来源（教材页码/章节），便于核查</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>12.2 内容安全过滤</h3>
+  <pre><code># 防幻觉Prompt模板
+SYSTEM_PROMPT = """你是一个教育内容生成助手。请严格遵循以下规则：
+
+1. 仅基于提供的【知识库内容】生成学习资源，不得编造知识库中不存在的信息。
+2. 如果知识库中没有足够信息，请明确说明"当前知识库中暂无此内容"。
+3. 生成的内容必须标注知识来源（如"参考：教材第X章"）。
+4. 对于数值、公式、代码等关键内容，必须确保与知识库一致。
+5. 不得生成任何与学习无关的、敏感的或不当的内容。
+
+【知识库内容】：
+{retrieved_context}
+"""
+
+# 内容安全过滤
+async def content_safety_check(text: str) -> bool:
+    """检查生成内容是否安全"""
+    # 1. 敏感词过滤
+    if contains_sensitive_words(text):
+        return False
+    # 2. 调用讯飞内容审核API
+    result = await spark_content_moderation(text)
+    return result["pass"]</code></pre>
+</div>
+
+<!-- ==================== 13. 测试与优化 ==================== -->
+<div class="section" id="sec13">
+  <h2><span class="num">13</span> 第十步：系统测试与性能优化</h2>
+
+  <h3>13.1 测试方案</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>测试类型</th>
+        <th>测试内容</th>
+        <th>工具</th>
+      </tr>
+      <tr>
+        <td>单元测试</td>
+        <td>各Agent逻辑、RAG检索、画像抽取</td>
+        <td>pytest</td>
+      </tr>
+      <tr>
+        <td>集成测试</td>
+        <td>多Agent协作流程端到端</td>
+        <td>pytest + httpx</td>
+      </tr>
+      <tr>
+        <td>前端测试</td>
+        <td>组件渲染、SSE流式接收</td>
+        <td>Vitest + React Testing Library</td>
+      </tr>
+      <tr>
+        <td>性能测试</td>
+        <td>响应时间、并发能力</td>
+        <td>locust / Apache Benchmark</td>
+      </tr>
+      <tr>
+        <td>内容质量测试</td>
+        <td>生成资源准确率、幻觉率</td>
+        <td>人工抽检 + 自动化核查</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>13.2 性能优化要点</h3>
+  <ul>
+    <li><strong>流式输出</strong>：所有大模型调用启用streaming，前端实时显示生成进度</li>
+    <li><strong>并行生成</strong>：6个资源生成Agent并行执行，而非串行等待</li>
+    <li><strong>缓存机制</strong>：Redis缓存常见问题的RAG检索结果和Agent中间结果</li>
+    <li><strong>异步处理</strong>：视频生成等耗时任务使用Celery异步队列，不阻塞主流程</li>
+    <li><strong>向量检索优化</strong>：Chroma设置合适的chunk_size和top_k参数</li>
+  </ul>
+</div>
+
+<!-- ==================== 14. 部署 ==================== -->
+<div class="section" id="sec14">
+  <h2><span class="num">14</span> 第十一步：部署与交付</h2>
+
+  <h3>14.1 Docker Compose 部署</h3>
+  <pre><code># docker-compose.yml
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SPARK_APPID=${SPARK_APPID}
+      - SPARK_API_KEY=${SPARK_API_KEY}
+      - SPARK_API_SECRET=${SPARK_API_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+      - chroma_data:/app/chroma_db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: learning_agent
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pg_data:
+  chroma_data:</code></pre>
+
+  <h3>14.2 一键启动</h3>
+  <pre><code># 启动全部服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f backend
+
+# 停止
+docker-compose down</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📦 交付要求</div>
+    <p>赛题要求"可在常规环境下正常运行"。Docker Compose部署是最保险的方案——评审老师只需 <code>docker-compose up</code> 即可运行系统，无需配置环境。</p>
+  </div>
+</div>
+
+<!-- ==================== 15. 文档与提交 ==================== -->
+<div class="section" id="sec15">
+  <h2><span class="num">15</span> 第十二步：文档撰写与提交物准备</h2>
+
+  <h3>15.1 提交物清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>提交项</th>
+        <th>要求</th>
+        <th>建议工具</th>
+      </tr>
+      <tr>
+        <td>演示PPT</td>
+        <td>展示应用价值、AI技术融合、创新价值、核心功能</td>
+        <td>PowerPoint / Keynote</td>
+      </tr>
+      <tr>
+        <td>项目源码+数据集+配置</td>
+        <td>文件整理规范，可正常运行</td>
+        <td>GitHub仓库 + Docker配置</td>
+      </tr>
+      <tr>
+        <td>演示视频</td>
+        <td>≤7分钟，展示操作流程、核心功能、多模态生成效果</td>
+        <td>OBS录屏 + 剪映剪辑</td>
+      </tr>
+      <tr>
+        <td>系统开发说明书</td>
+        <td>需求分析、架构设计、技术实现、创新点</td>
+        <td>Word/Markdown → PDF</td>
+      </tr>
+      <tr>
+        <td>测试说明书</td>
+        <td>测试方案、测试用例、测试结果</td>
+        <td>Word/Markdown → PDF</td>
+      </tr>
+      <tr>
+        <td>AI Coding工具说明</td>
+        <td>说明使用了哪些AI辅助工具及其作用</td>
+        <td>文档中单独章节</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>15.2 文档撰写要点</h3>
+  <div class="callout callout-warn">
+    <div class="callout-title">📝 文档要求（评分占10%，但影响整体印象）</div>
+    <ol>
+      <li><strong>需求层面</strong>：深入分析大学生学习需求痛点，结合AI技术说明需求与技术的结合点</li>
+      <li><strong>技术开发层面</strong>：详细阐述智能体设计、开发、测试、部署全流程，重点说明AI技术融合思路和创新实践</li>
+      <li><strong>视觉工具</strong>：必须包含架构图、流程图、智能体协作图、数据流图等</li>
+      <li><strong>开源标注</strong>：在文档显著位置标注所有使用的开源项目名称、来源、版本和许可证</li>
+      <li><strong>AI工具说明</strong>：单独章节说明使用的科大讯飞工具（iFlyCode、星火API、TTS等）及其在开发中的作用</li>
+    </ol>
+  </div>
+
+  <h3>15.3 演示视频脚本建议（7分钟）</h3>
+  <pre><code>0:00-0:30  开场：项目名称、团队介绍、赛题背景
+0:30-1:30  系统架构：展示多智能体架构图，说明技术栈
+1:30-2:30  功能演示1：对话式画像构建（展示流式对话+画像雷达图）
+2:30-4:30  功能演示2：多智能体资源生成（展示6种资源生成过程和效果）
+4:30-5:30  功能演示3：学习路径规划+资源推送
+5:30-6:15  功能演示4：智能辅导+效果评估（加分项）
+6:15-7:00  创新亮点总结 + AI技术融合说明</code></pre>
+</div>
+
+<!-- ==================== 16. 时间线 ==================== -->
+<div class="section" id="sec16">
+  <h2><span class="num">16</span> 开发时间线规划</h2>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>第1周：需求分析 + 环境搭建</h4>
+      <ul>
+        <li>深度研读赛题，拆解功能需求</li>
+        <li>确定技术栈，搭建开发环境</li>
+        <li>注册讯飞开放平台，获取API密钥</li>
+        <li>收集课程知识库素材</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第2周：知识库 + RAG + 大模型适配</h4>
+      <ul>
+        <li>构建课程知识库（PDF/PPT/文档）</li>
+        <li>实现RAG检索系统（Chroma + BGE-M3）</li>
+        <li>完成星火大模型API适配层</li>
+        <li>验证RAG检索准确性</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第3周：多智能体框架 + 画像构建</h4>
+      <ul>
+        <li>使用CrewAI定义全部10个Agent角色</li>
+        <li>实现画像构建Agent + 对话接口</li>
+        <li>实现SSE流式对话</li>
+        <li>完成画像6维度抽取与存储</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第4周：资源生成智能体（核心）</h4>
+      <ul>
+        <li>实现6个资源生成Agent（文档/导图/题库/视频/代码/阅读）</li>
+        <li>实现多智能体协作编排（层级模式）</li>
+        <li>实现讯飞TTS配音 + 视频合成</li>
+        <li>实现生成进度追踪</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第5周：路径规划 + 加分项</h4>
+      <ul>
+        <li>实现学习路径规划Agent</li>
+        <li>实现动态路径调整机制</li>
+        <li>实现智能辅导Agent（多模态答疑）</li>
+        <li>实现学习效果评估Agent</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第6周：前端开发</h4>
+      <ul>
+        <li>完成所有页面（对话/学习中心/路径/评估/详情）</li>
+        <li>SSE流式输出 + Markdown渲染</li>
+        <li>思维导图/雷达图/进度图表</li>
+        <li>界面美化与交互优化</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第7周：防幻觉 + 测试 + 优化</h4>
+      <ul>
+        <li>实现四层防幻觉机制</li>
+        <li>内容安全过滤</li>
+        <li>单元测试 + 集成测试</li>
+        <li>性能优化（并行/缓存/异步）</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第8周：部署 + 文档 + 视频</h4>
+      <ul>
+        <li>Docker Compose容器化部署</li>
+        <li>撰写系统开发说明书 + 测试说明书</li>
+        <li>录制演示视频（≤7分钟）</li>
+        <li>制作演示PPT</li>
+        <li>最终检查 + 提交</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 17. 评分策略 ==================== -->
+<div class="section" id="sec17">
+  <h2><span class="num">17</span> 评分策略与高分要点</h2>
+
+  <h3>17.1 各评分项高分策略</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>评分项</th>
+        <th>占比</th>
+        <th>高分策略</th>
+      </tr>
+      <tr>
+        <td>创新价值与实用性</td>
+        <td>35%</td>
+        <td>
+          ① 选择具体专业课程切入（如"人工智能导论"），而非泛泛而谈<br>
+          ② 多智能体协作机制有创新（如层级式编排、动态分工）<br>
+          ③ 多模态视频生成是亮点（多数队伍做不到）<br>
+          ④ 画像"随学随新"的动态更新机制体现创新<br>
+          ⑤ 解决真实痛点：知识筛选困难、学习路径模糊
+        </td>
+      </tr>
+      <tr>
+        <td>功能实现及技术要求</td>
+        <td>45%</td>
+        <td>
+          ① 5个核心功能全部完整实现，不缺功能<br>
+          ② 多智能体框架明确（CrewAI + 架构图）<br>
+          ③ 6种资源类型（超出最低5种要求）<br>
+          ③ 2个加分项都实现（辅导+评估）<br>
+          ④ 防幻觉四层机制完善<br>
+          ⑤ 系统稳定可运行（Docker一键部署）<br>
+          ⑥ 深度使用讯飞工具链（星火+TTS+OCR）
+        </td>
+      </tr>
+      <tr>
+        <td>配套文档丰富度</td>
+        <td>10%</td>
+        <td>
+          ① 文档结构规范（需求分析→架构→实现→测试→部署）<br>
+          ② 含多张图表（架构图/流程图/协作图/数据流图/ER图）<br>
+          ③ 开源项目标注完整（名称+来源+版本+许可证）<br>
+          ④ AI工具使用说明独立章节<br>
+          ⑤ 需求与技术结合点论述清晰
+        </td>
+      </tr>
+      <tr>
+        <td>演示视频、PPT</td>
+        <td>10%</td>
+        <td>
+          ① 视频≤7分钟，节奏紧凑，重点突出<br>
+          ② 展示完整操作流程（画像→生成→路径→评估）<br>
+          ③ 展示多模态生成效果（视频/导图/代码）<br>
+          ④ PPT逻辑清晰，一页一重点<br>
+          ⑤ 视频质量好（清晰度/配音/字幕）
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>17.2 关键避坑指南</h3>
+  <div class="callout callout-danger">
+    <div class="callout-title">⚠️ 常见失分点</div>
+    <ol>
+      <li><strong>不是"多智能体"</strong>：只是简单调用多次大模型API，没有真正的Agent角色分工和协作编排 → 必须用CrewAI等框架明确角色</li>
+      <li><strong>资源类型不足5种</strong>：只生成了文档和题目 → 至少完成5种，建议6种</li>
+      <li><strong>没有RAG</strong>：大模型直接生成，内容全是幻觉 → 必须有知识库支撑</li>
+      <li><strong>画像维度不足6个</strong>：只记录了专业和年级 → 补齐6个维度</li>
+      <li><strong>没用讯飞工具</strong>：赛题明确要求 → 全链路使用讯飞产品</li>
+      <li><strong>系统无法运行</strong>：依赖配置复杂 → Docker一键部署</li>
+      <li><strong>文档缺图表</strong>：全是文字 → 至少5张以上架构/流程图</li>
+      <li><strong>没有流式输出</strong>：白屏等待 → 所有AI回复都用SSE流式</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">🏆 最终建议</div>
+    <p>这道赛题的核心竞争力在于<strong>"多智能体协作的真实性"</strong>和<strong>"多模态生成的丰富度"</strong>。多数参赛队伍能做到"调用大模型生成文档"，但能在"多Agent角色分工协作"和"视频/动画等多模态生成"上做出亮点的队伍不多。把精力集中在这两个差异化点上，配合完善的防幻觉机制和讯飞工具链的深度使用，就能在45%+35%=80%的核心评分中取得优势。</p>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <p>第十五届中国软件杯大赛 · A3赛题开发指南</p>
+  <p>基于大模型的个性化资源生成与学习多智能体系统开发 · 出题企业：科大讯飞</p>
+</div>
+
+</body>
+</html>
