@@ -1,20 +1,13 @@
-# 知识库微服务依赖
+# Knowledge Service Dependencies
 # Python 3.11+
 
-# Web 框架
+# Web Framework
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.12
 
-# 向量数据库 + Embedding
-chromadb>=0.5.0
-sentence-transformers>=3.0.0
+# HTTP Client (Spark KB API)
+httpx>=0.28.0
 
-# 文档解析
-pymupdf>=1.24.0
-unstructured>=0.15.0
-langchain>=0.3.0
-langchain-community>=0.3.0
-
-# 工具
+# Utilities
 python-dotenv>=1.0.0

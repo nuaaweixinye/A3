@@ -1,31 +1,14 @@
-"""知识库服务配置 —— 所有可调参数通过环境变量控制"""
+"""
+知识库服务配置 —— 纯星火知识库模式
+所有参数通过环境变量控制，均已内置默认值，零配置即可运行。
+"""
 
 import os
-from pathlib import Path
 
-# 项目根目录（knowledge-service/）
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-
-# Chroma 向量库持久化目录
-CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", str(ROOT_DIR / "chroma_db"))
-
-# Chroma collection 名称
-CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "course_knowledge")
-
-# BGE-M3 Embedding 模型
-EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "BAAI/bge-m3")
-EMBEDDING_DEVICE = os.getenv("EMBEDDING_DEVICE", "cpu")  # "cuda" 如果有 GPU
-
-# 文档分块参数（与开发指南一致）
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "500"))
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
-
-# 种子知识库目录
-KNOWLEDGE_BASE_DIR = os.getenv("KNOWLEDGE_BASE_DIR", str(ROOT_DIR / "knowledge_base"))
+# 讯飞星火知识库凭证
+SPARK_APP_ID = os.getenv("SPARK_APP_ID", "36271512")
+SPARK_API_SECRET = os.getenv("SPARK_API_SECRET", "M2VmYWUxYWU1MzcyMmUwNzUyMDc0MmQy")
+SPARK_KB_REPO_ID = os.getenv("SPARK_KB_REPO_ID", "ecf26d41a7a84afe814d7f6afb5ba6ea")
 
 # 检索默认 Top-K
 DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", "5"))
-
-# 事实核查：声明最小/最大长度
-FACT_CHECK_MIN_LEN = int(os.getenv("FACT_CHECK_MIN_LEN", "6"))
-FACT_CHECK_MAX_LEN = int(os.getenv("FACT_CHECK_MAX_LEN", "120"))
