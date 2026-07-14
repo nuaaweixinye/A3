@@ -1,0 +1,21 @@
+{
+  "name": "knowledge-lib",
+  "version": "1.0.0",
+  "description": "讯飞星火知识库 (ChatDoc) 调用封装，提供语义检索、事实验证、文件上传",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "xfyun",
+    "spark",
+    "chatdoc",
+    "knowledge-base",
+    "rag"
+  ],
+  "license": "MIT"
+}
