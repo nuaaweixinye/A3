@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A3赛题开发指南 - 参考 OpenMAIC 架构 · 第十五届中国软件杯</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --primary-light: #dbeafe;
+    --accent: #f59e0b;
+    --accent-dark: #d97706;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --code-bg: #f1f5f9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.8; font-size: 15px;
+  }
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #2563eb 100%);
+    color: white; padding: 80px 40px 60px; text-align: center;
+  }
+  .cover h1 { font-size: 30px; margin-bottom: 12px; letter-spacing: 1px; }
+  .cover .subtitle { font-size: 17px; opacity: 0.9; margin-bottom: 8px; }
+  .cover .meta { font-size: 14px; opacity: 0.7; margin-top: 20px; }
+  .cover .badge {
+    display: inline-block; background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
+    padding: 4px 16px; font-size: 13px; margin: 4px 6px;
+  }
+  .cover .ref-badge {
+    display: inline-block; background: rgba(16,185,129,0.3);
+    border: 1px solid rgba(16,185,129,0.4); border-radius: 20px;
+    padding: 4px 16px; font-size: 13px; margin: 4px 6px;
+  }
+  /* TOC */
+  .toc {
+    max-width: 960px; margin: 40px auto;
+    background: var(--card-bg); border-radius: 12px;
+    padding: 32px 40px; box-shadow: var(--shadow);
+  }
+  .toc h2 { font-size: 22px; border-left: 4px solid var(--primary); padding-left: 12px; margin-bottom: 20px; }
+  .toc ol { list-style: none; counter-reset: toc; }
+  .toc li { counter-increment: toc; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+  .toc li:last-child { border-bottom: none; }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-weight: 700; color: var(--primary); margin-right: 12px; font-size: 14px;
+  }
+  .toc a { text-decoration: none; color: var(--text); }
+  .toc a:hover { color: var(--primary); }
+  /* Main */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px 60px; }
+  .section {
+    background: var(--card-bg); border-radius: 12px;
+    padding: 36px 40px; margin-bottom: 24px; box-shadow: var(--shadow);
+  }
+  .section h2 { font-size: 24px; color: var(--primary-dark); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section h2 .num {
+    background: var(--primary); color: white; width: 36px; height: 36px;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+  }
+  .section h3 { font-size: 18px; color: var(--text); margin-top: 28px; margin-bottom: 12px; padding-left: 12px; border-left: 3px solid var(--accent); }
+  .section h4 { font-size: 16px; color: var(--text); margin-top: 20px; margin-bottom: 8px; }
+  .section p { margin-bottom: 12px; }
+  .section ul, .section ol { margin: 8px 0 16px 24px; }
+  .section li { margin-bottom: 6px; }
+  /* Tags */
+  .tag {
+    display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 4px;
+    font-weight: 600; margin-right: 4px;
+  }
+  .tag-backend { background: #dbeafe; color: #1e40af; }
+  .tag-frontend { background: #fce7f3; color: #be185d; }
+  .tag-ai { background: #fef3c7; color: #92400e; }
+  .tag-devops { background: #d1fae5; color: #065f46; }
+  .tag-tool { background: #e9d5ff; color: #6b21a8; }
+  .tag-required { background: #fee2e2; color: #991b1b; }
+  .tag-bonus { background: #ccfbf1; color: #115e59; }
+  .tag-openmaic { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--primary-light); color: var(--primary-dark); font-weight: 700; text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+  td { padding: 10px 14px; border: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  /* Code */
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 13px; line-height: 1.6;
+  }
+  code { font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace; }
+  p code, li code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--danger); }
+  /* Callouts */
+  .callout { border-radius: 8px; padding: 16px 20px; margin: 16px 0; border-left: 4px solid; }
+  .callout-info { background: #eff6ff; border-color: var(--primary); }
+  .callout-warn { background: #fffbeb; border-color: var(--accent); }
+  .callout-tip { background: #f0fdf4; border-color: var(--success); }
+  .callout-danger { background: #fef2f2; border-color: var(--danger); }
+  .callout-openmaic { background: #ecfdf5; border-color: #10b981; }
+  .callout-title { font-weight: 700; margin-bottom: 6px; }
+  /* Step cards */
+  .step-card {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; margin: 16px 0; background: #fafbfc;
+    transition: box-shadow 0.2s;
+  }
+  .step-card:hover { box-shadow: var(--shadow-lg); }
+  .step-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .step-card-header h4 { margin: 0; }
+  .step-card .tech-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  /* Architecture */
+  .arch-diagram {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px; margin: 16px 0; font-family: "Consolas", monospace;
+    font-size: 12.5px; line-height: 1.45; overflow-x: auto; white-space: pre;
+  }
+  /* Timeline */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -24px; top: 4px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--primary); border: 2px solid white; box-shadow: 0 0 0 2px var(--primary);
+  }
+  /* Compare table */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;
+  }
+  .compare-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px;
+  }
+  .compare-card.openmaic { background: #f0fdf4; border-color: #10b981; }
+  .compare-card.ours { background: #eff6ff; border-color: var(--primary); }
+  .compare-card h4 { margin-top: 0; margin-bottom: 10px; }
+  .footer {
+    text-align: center; padding: 30px; color: var(--text-light);
+    font-size: 13px; border-top: 1px solid var(--border);
+  }
+  @media (max-width: 768px) {
+    .cover { padding: 40px 20px; }
+    .cover h1 { font-size: 20px; }
+    .section { padding: 20px; }
+    .toc { padding: 20px; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<div class="cover">
+  <h1>基于大模型的个性化资源生成与学习多智能体系统开发</h1>
+  <p class="subtitle">第十五届中国软件杯 A3赛题 · 完整开发指南</p>
+  <div style="margin-top: 12px;">
+    <span class="ref-badge">参考架构：THU-MAIC/OpenMAIC v0.3.0</span>
+  </div>
+  <div style="margin-top: 8px;">
+    <span class="badge">出题企业：科大讯飞</span>
+    <span class="badge">组类：A组</span>
+    <span class="badge">多智能体系统</span>
+  </div>
+  <p class="meta">文档版本 v2.0 · 2026年7月 · 架构参考 OpenMAIC</p>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#sec0">为什么参考 OpenMAIC</a></li>
+    <li><a href="#sec1">赛题核心要求重述</a></li>
+    <li><a href="#sec2">系统架构设计（对齐 OpenMAIC）</a></li>
+    <li><a href="#sec3">技术栈详解</a></li>
+    <li><a href="#sec4">第1步：环境搭建与项目初始化</a></li>
+    <li><a href="#sec5">第2步：LLM Provider 抽象层</a></li>
+    <li><a href="#sec6">第3步：LangGraph 多智能体编排</a></li>
+    <li><a href="#sec7">第4步：知识库与 RAG</a></li>
+    <li><a href="#sec8">第5步：对话式学习画像构建</a></li>
+    <li><a href="#sec9">第6步：资源生成 Pipeline</a></li>
+    <li><a href="#sec10">第7步：学习路径规划</a></li>
+    <li><a href="#sec11">第8步：智能辅导 + 效果评估（加分项）</a></li>
+    <li><a href="#sec12">第9步：前端界面开发</a></li>
+    <li><a href="#sec13">第10步：防幻觉与内容安全</a></li>
+    <li><a href="#sec14">第11步：测试与优化</a></li>
+    <li><a href="#sec15">第12步：部署与提交物</a></li>
+    <li><a href="#sec16">开发时间线与分工</a></li>
+  </ol>
+</div>
+
+<div class="container">
+
+<!-- ==================== 0. 为什么参考 OpenMAIC ==================== -->
+<div class="section" id="sec0">
+  <h2><span class="num">00</span> 为什么选择 OpenMAIC 作为架构参考</h2>
+
+  <h3>OpenMAIC 是什么</h3>
+  <p>OpenMAIC（Open Multi-Agent Interactive Classroom）是<a href="https://github.com/THU-MAIC/OpenMAIC" target="_blank">清华大学 MAIC 团队</a>开源的多智能体互动课堂系统。它将任意主题转化为完整的交互式课堂体验——包含 AI 教师讲课、幻灯片演示、测验、3D模拟、项目式学习（PBL）等。发表论文于 <em>Journal of Computer Science and Technology (JCST)</em>，MIT 协议，技术架构成熟且前沿。</p>
+
+  <h3>OpenMAIC 与本次赛题的高度契合</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th width="20%">维度</th>
+        <th width="40%">OpenMAIC 已有能力</th>
+        <th width="40%">本次赛题需要扩展的能力</th>
+      </tr>
+      <tr>
+        <td>多智能体</td>
+        <td>LangGraph 编排 AI 教师 + 多位 AI 同学，圆桌讨论、问答模式</td>
+        <td>增加画像构建Agent、资源生成Agent集群、路径规划Agent</td>
+      </tr>
+      <tr>
+        <td>内容生成</td>
+        <td>一键生成完整课堂（大纲→幻灯片→测验→交互模块→PBL），支持 PPTX 导出</td>
+        <td>扩展为6种资源类型：文档/导图/题库/视频/代码/阅读材料</td>
+      </tr>
+      <tr>
+        <td>交互/渲染</td>
+        <td>Canvas 幻灯片引擎、SVG 白板、3D可视化、模拟、游戏、在线编程</td>
+        <td>直接复用交互场景系统，作为"多模态资源"展示层</td>
+      </tr>
+      <tr>
+        <td>TTS/多模态</td>
+        <td>VoxCPM2 语音克隆、多 TTS 提供商、ASR 语音输入</td>
+        <td>替换为讯飞 TTS，用于教学视频配音和智能辅导朗读</td>
+      </tr>
+      <tr>
+        <td>LLM 路由</td>
+        <td>分阶段模型路由（场景生成/备课/对话用不同模型）</td>
+        <td>增加讯飞星火作为 Provider，画像/备课/辅导按阶段路由</td>
+      </tr>
+      <tr>
+        <td>知识库</td>
+        <td>PDF/PPTX 文档导入与解析，MinerU 增强解析</td>
+        <td>扩展为完整 RAG 系统（Chroma + Embedding），支持防幻觉</td>
+      </tr>
+      <tr>
+        <td>部署</td>
+        <td>Docker Compose + Vercel 一键部署</td>
+        <td>直接复用 Docker 部署方案</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-openmaic">
+    <div class="callout-title">🔬 核心复用点</div>
+    <ol>
+      <li><strong>LangGraph 多智能体编排</strong> — OpenMAIC 的状态图编排模式直接适用于"路径规划Agent分配任务给资源生成Agent集群"</li>
+      <li><strong>分阶段 LLM 路由</strong> — 画像构建、资源生成、辅导答疑等阶段使用不同模型/参数配置</li>
+      <li><strong>Scene/Pipeline 两阶段生成</strong> — "大纲→场景内容"的模式直接映射为"学习路径→资源生成"</li>
+      <li><strong>Canvas 幻灯片 + 交互模块</strong> — 复用作为"多模态资源"的前端渲染方案</li>
+      <li><strong>Monorepo + pnpm workspaces</strong> — 清晰的项目组织方式</li>
+    </ol>
+  </div>
+
+  <h3>架构对比：OpenMAIC vs 我们的系统</h3>
+  <div class="compare-grid">
+    <div class="compare-card openmaic">
+      <h4 style="color: #065f46;">OpenMAIC 架构模式</h4>
+      <pre style="font-size: 12px; margin: 0; padding: 12px;">用户输入主题
+  → 大纲生成 (outline-generator)
+  → 场景生成 (scene-generator)
+    ├─ 幻灯片场景 (slide)
+    ├─ 测验场景 (quiz)
+    ├─ 交互场景 (interactive: 3D/游戏/模拟)
+    └─ PBL 场景 (project-based)
+  → 课堂播放 (playback state machine)
+  → 多智能体讨论 (orchestration graph)</pre>
+    </div>
+    <div class="compare-card ours">
+      <h4 style="color: #1e40af;">我们的系统 架构模式</h4>
+      <pre style="font-size: 12px; margin: 0; padding: 12px;">用户对话
+  → 画像构建 (profile agent)
+  → 路径规划 (path agent)
+  → 资源生成集群 (resource agents)
+    ├─ 讲解文档 (doc — 复用 slide)
+    ├─ 思维导图 (mindmap — 复用 diagram)
+    ├─ 练习题库 (quiz — 直接复用)
+    ├─ 教学视频 (video — 新增 TTS 流程)
+    ├─ 代码实操 (code — 复用 online-coding)
+    └─ 拓展阅读 (reading — 新增)
+  → 智能辅导 (tutor agent)
+  → 效果评估 (eval agent)</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 1. 赛题核心要求 ==================== -->
+<div class="section" id="sec1">
+  <h2><span class="num">01</span> 赛题核心要求重述</h2>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th width="8%">编号</th><th width="22%">功能模块</th><th width="10%">性质</th><th>核心要求</th><th>OpenMAIC 可复用</th></tr>
+      <tr>
+        <td>1</td><td>对话式学习画像构建</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>自然语言对话抽取 ≥6 维度画像，随学随更新</td><td>Chat 对话系统 + Agent 角色系统</td>
+      </tr>
+      <tr>
+        <td>2</td><td>多智能体协同资源生成</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>不同角色 Agent 协作生成 ≥5 种类型资源</td><td>Scene 生成 Pipeline + 交互模块</td>
+      </tr>
+      <tr>
+        <td>3</td><td>学习路径规划与推送</td>
+        <td><span class="tag tag-required">必做</span></td>
+        <td>智能体协同整合资源，动态规划，精准推送</td><td>LangGraph 编排 + Playback 状态机</td>
+      </tr>
+      <tr>
+        <td>4</td><td>智能辅导</td>
+        <td><span class="tag tag-bonus">加分项</span></td>
+        <td>即时多模态答疑（文字+图解+短视频）</td><td>Multi-agent 讨论 + TTS + 白板</td>
+      </tr>
+      <tr>
+        <td>5</td><td>学习效果评估</td>
+        <td><span class="tag tag-bonus">加分项</span></td>
+        <td>实时跟踪、多维度评估、动态调整</td><td>Quiz 评分系统 + 行为追踪</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">赛题硬性约束</div>
+    <ul>
+      <li>AI 辅助工具必须选用<strong>科大讯飞</strong>相关工具（星火大模型 API / iFlyCode / 讯飞 TTS）</li>
+      <li>须明确"多智能体协同框架"</li>
+      <li>初始知识库需自行构建至少一门完整高校课程</li>
+      <li>防幻觉与内容安全过滤机制</li>
+      <li>使用开源项目需标注名称、来源、协议</li>
+    </ul>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">评分权重</div>
+    <p>创新价值 35% + 功能实现 45% + 文档 10% + 视频/PPT 10%。<strong>功能实现权重最大，必须保证5个功能完整可运行</strong>；加分项是拉开差距的关键。</p>
+  </div>
+</div>
+
+<!-- ==================== 2. 系统架构 ==================== -->
+<div class="section" id="sec2">
+  <h2><span class="num">02</span> 系统架构设计（对齐 OpenMAIC）</h2>
+
+  <h3>2.1 总体分层架构</h3>
+  <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                    Next.js 16 全栈应用                             │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              React 19 前端 (App Router)                      │  │
+│  │  首页 │ 画像对话 │ 学习中心 │ 资源详情 │ 路径导航 │ 评估看板    │  │
+│  │  组件: Canvas幻灯片 │ SVG白板 │ 测验渲染 │ 3D/模拟/代码      │  │
+│  ├───────────────────────────────────────────────────────────┤  │
+│  │              API Routes (服务端)                              │  │
+│  │  /api/chat/profile  │  /api/learn/generate  │  /api/tutor   │  │
+│  │  /api/eval/assess   │  /api/knowledge/search │  /api/export  │  │
+│  ├───────────────────────────────────────────────────────────┤  │
+│  │              lib/ 核心逻辑层                                   │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │  LangGraph 多智能体编排引擎 (lib/orchestration/)      │   │  │
+│  │  │  ┌──────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐ │   │  │
+│  │  │  │画像Agent  │ │规划Agent │ │文档Agent │ │导图Agent  │ │   │  │
+│  │  │  │ (profile) │ │(planner) │ │(doc)    │ │(mindmap) │ │   │  │
+│  │  │  └──────────┘ └─────────┘ └─────────┘ └──────────┘ │   │  │
+│  │  │  ┌──────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐ │   │  │
+│  │  │  │题库Agent  │ │视频Agent │ │代码Agent │ │阅读Agent  │ │   │  │
+│  │  │  │(quiz)    │ │(video)  │ │(code)   │ │(reading) │ │   │  │
+│  │  │  └──────────┘ └─────────┘ └─────────┘ └──────────┘ │   │  │
+│  │  │  ┌──────────┐ ┌─────────┐                           │   │  │
+│  │  │  │辅导Agent  │ │评估Agent │                           │   │  │
+│  │  │  │(tutor)   │ │(eval)   │                           │   │  │
+│  │  │  └──────────┘ └─────────┘                           │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │  生成 Pipeline (lib/generation/)                      │   │  │
+│  │  │  画像分析 → 路径规划 → 资源生成 (两阶段: 大纲→内容)     │   │  │
+│  │  │  进度追踪 → 后处理 → 渲染输出                          │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │  LLM Provider 层 (lib/ai/)                             │   │  │
+│  │  │  星火 │ GPT │ Claude │ Qwen │ ... → 统一接口            │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │  RAG 知识库层 (lib/knowledge/)                         │   │  │
+│  │  │  Chroma 向量库 │ BGE-M3 Embedding │ 文档解析              │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │  数据存储层                                            │   │  │
+│  │  │  PostgreSQL │ Redis │ MinIO/本地文件系统               │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>2.2 核心创新：将 OpenMAIC 的"场景系统"扩展为"资源类型系统"</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>OpenMAIC Scene Type</th><th>我们的 Resource Type</th><th>复用方式</th></tr>
+      <tr>
+        <td>Slide（Canvas 幻灯片）</td>
+        <td><strong>专业课程讲解文档</strong></td>
+        <td>直接复用 Canvas 幻灯片引擎，Markdown → 精美课件，支持 PPTX 导出</td>
+      </tr>
+      <tr>
+        <td>Diagram（思维导图组件）</td>
+        <td><strong>知识点思维导图</strong></td>
+        <td>复用 Mermaid / 树形图渲染，LLM 生成结构 → 前端渲染</td>
+      </tr>
+      <tr>
+        <td>Quiz（测验场景）</td>
+        <td><strong>练习题库</strong></td>
+        <td>直接复用测验系统，扩展为选择题/填空题/简答题/编程题4种题型</td>
+      </tr>
+      <tr>
+        <td>Interactive（3D/模拟/游戏）</td>
+        <td><strong>教学视频/动画</strong></td>
+        <td>复用交互模块的 UI 框架 + 讯飞 TTS 配音 → 视频合成</td>
+      </tr>
+      <tr>
+        <td>Online-Coding（在线编程）</td>
+        <td><strong>代码实操案例</strong></td>
+        <td>直接复用在线编程场景，增加代码执行验证</td>
+      </tr>
+      <tr>
+        <td>— （新增）</td>
+        <td><strong>拓展阅读材料</strong></td>
+        <td>LLM + RAG + 网络搜索 → 结构化推荐列表</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>2.3 学生画像 6 维度设计</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>抽取方式</th><th>存储字段</th></tr>
+      <tr><td>知识基础水平</td><td>对话中判断 → 测验中验证 → 动态调整</td><td>knowledge_map: {"知识点": 0-100}</td></tr>
+      <tr><td>认知学习风格</td><td>对话关键词分析 + 资源点击行为</td><td>cognitive_style: "visual"/"auditory"/"reading"/"kinesthetic"</td></tr>
+      <tr><td>易错点偏好</td><td>练习错误记录 + 答疑历史分析</td><td>error_patterns: ["类型1", "类型2"]</td></tr>
+      <tr><td>学习目标方向</td><td>对话直接获取 + 阶段性确认</td><td>learning_goal: "exam"/"project"/"research"/"interest"</td></tr>
+      <tr><td>学习节奏偏好</td><td>对话 + 每次学习时长统计</td><td>learning_pace: "fast"/"medium"/"slow"</td></tr>
+      <tr><td>兴趣方向偏好</td><td>对话 + 资源点击/收藏行为</td><td>interests: ["AI", "NLP", ...]</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== 3. 技术栈 ==================== -->
+<div class="section" id="sec3">
+  <h2><span class="num">03</span> 技术栈详解 — 从 OpenMAIC 迁移</h2>
+
+  <div class="callout callout-openmaic">
+    <div class="callout-title">OpenMAIC 原版技术栈 vs 我们的适配</div>
+    <p>以下标记 <span class="tag tag-openmaic">复用</span> 的为直接从 OpenMAIC 复用的技术，<span class="tag tag-required">替换/新增</span> 的为赛题适配。</p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>层面</th><th>技术</th><th>OpenMAIC 的情况</th><th>我们的调整</th></tr>
+      <tr>
+        <td rowspan="3"><strong>全栈框架</strong></td>
+        <td>Next.js 16</td><td><span class="tag tag-openmaic">复用</span> App Router + API Routes</td><td>直接用，前后端一体，减少架构复杂度</td>
+      </tr>
+      <tr>
+        <td>pnpm >= 10</td><td><span class="tag tag-openmaic">复用</span> Monorepo workspace</td><td>管理前后端 + 工具包</td>
+      </tr>
+      <tr>
+        <td>TypeScript 5</td><td><span class="tag tag-openmaic">复用</span></td><td>全栈类型安全</td>
+      </tr>
+      <tr>
+        <td rowspan="5"><strong>多智能体</strong></td>
+        <td>LangGraph 1.1</td><td><span class="tag tag-openmaic">复用</span> 状态图编排多智能体讨论</td><td>扩展状态图：画像→规划→生成→辅导→评估</td>
+      </tr>
+      <tr>
+        <td>LangChain Core</td><td><span class="tag tag-openmaic">复用</span> LLM 链、工具调用</td><td>RAG 管道 + Agent 工具链</td>
+      </tr>
+      <tr>
+        <td>Vercel AI SDK</td><td><span class="tag tag-openmaic">复用</span> useChat Hook + 流式 SSE</td><td>对话 + 资源生成进度流式推送</td>
+      </tr>
+      <tr>
+        <td>讯飞星火 API</td><td><span class="tag tag-required">新增</span></td><td>作为主要 LLM Provider</td>
+      </tr>
+      <tr>
+        <td>分阶段 LLM 路由</td><td><span class="tag tag-openmaic">复用</span> 不同阶段用不同模型</td><td>画像阶段用星火Lite，资源生成立用星火4.0 Ultra</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>前端</strong></td>
+        <td>React 19 + Tailwind 4</td><td><span class="tag tag-openmaic">复用</span></td><td>直接复用 UI 构建方式</td>
+      </tr>
+      <tr>
+        <td>shadcn/ui + Radix</td><td><span class="tag tag-openmaic">复用</span></td><td>替代 Ant Design，更轻量、更现代</td>
+      </tr>
+      <tr>
+        <td>Zustand</td><td><span class="tag tag-openmaic">复用</span></td><td>前端状态管理</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>多模态渲染</strong></td>
+        <td>Canvas API + SVG</td><td><span class="tag tag-openmaic">复用</span> 幻灯片/白板</td><td>文档课件 + 思维导图渲染</td>
+      </tr>
+      <tr>
+        <td>ECharts</td><td><span class="tag tag-openmaic">复用</span></td><td>学习评估数据可视化（雷达图/趋势图）</td>
+      </tr>
+      <tr>
+        <td>讯飞 TTS</td><td><span class="tag tag-required">替换</span> VoxCPM2</td><td>教学视频配音 + 辅导语音回答</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>RAG/知识库</strong></td>
+        <td>Chroma</td><td><span class="tag tag-required">新增</span></td><td>向量库存储课程知识</td>
+      </tr>
+      <tr>
+        <td>BGE-M3</td><td><span class="tag tag-required">新增</span></td><td>中英双语 Embedding</td>
+      </tr>
+      <tr>
+        <td>Unstructured / PyMuPDF</td><td>复用 UnPDF</td><td>扩充为完整文档解析链</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>部署</strong></td>
+        <td>Docker Compose</td><td><span class="tag tag-openmaic">复用</span></td><td>一体式容器部署</td>
+      </tr>
+      <tr>
+        <td>PostgreSQL</td><td><span class="tag tag-required">新增</span></td><td>用户数据 + 画像 + 学习记录</td>
+      </tr>
+      <tr>
+        <td>Redis</td><td><span class="tag tag-required">新增</span></td><td>会话缓存 + 任务队列 + SSE 缓冲</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>关键版本依赖清单</h3>
+  <pre><code>{
+  // 全栈框架
+  "next": "16.1.2",
+  "react": "19.2.3",
+  "typescript": "^5",
+
+  // 多智能体
+  "@langchain/core": "^1.1.16",
+  "@langchain/langgraph": "^1.1.1",
+  "ai": "^6.0.168",               // Vercel AI SDK
+  "@ai-sdk/react": "^3.0.170",
+
+  // UI
+  "tailwindcss": "^4",
+  "zustand": "^5.0.10",
+  "echarts": "^6.0.0",
+  "katex": "^0.16.33",            // LaTeX 数学公式
+  "lucide-react": "^0.562.0",     // 图标库
+
+  // 工具
+  "zod": "^4.3.5",                // 运行时校验
+  "nanoid": "^5.1.6",             // ID 生成
+  "jszip": "^3.10.1",             // ZIP 导出
+
+  // 文档生成
+  "pptxgenjs": "workspace:*",     // PPTX 导出
+  "sharp": "^0.34.5",             // 图片处理
+
+  // RAG (Python 侧，通过 API 调用)
+  // chromadb, sentence-transformers, pymupdf, unstructured
+
+  // 讯飞 (Python 侧，通过 API 调用)
+  // spark-ai-python (星火大模型 SDK)
+}</code></pre>
+</div>
+
+<!-- ==================== 4. 第1步 ==================== -->
+<div class="section" id="sec4">
+  <h2><span class="num">04</span> 第1步：环境搭建与项目初始化</h2>
+
+  <div class="step-card">
+    <div class="step-card-header"><h4>4.1 项目目录结构</h4></div>
+    <p>参考 OpenMAIC 的 Monorepo 结构，但增加 Python 后端服务用于 RAG 和 Agent 编排。</p>
+    <pre><code>learning-multiagent/
+├── frontend/                    # Next.js 全栈前端 (OpenMAIC 风格)
+│   ├── app/                     #   App Router
+│   │   ├── page.tsx             #     首页（对话/资源生成入口）
+│   │   ├── api/                 #     API Routes
+│   │   │   ├── chat/            #       对话画像 + 辅导 SSE
+│   │   │   ├── learn/           #       资源生成 + 路径规划
+│   │   │   ├── eval/            #       学习评估
+│   │   │   ├── knowledge/       #       知识库检索
+│   │   │   └── export/          #       资源导出（PPTX/HTML）
+│   │   ├── learn/[id]/          #     学习中心页面
+│   │   └── profile/             #     画像可视化页面
+│   ├── components/
+│   │   ├── chat/                #     对话组件（复用 OpenMAIC chat 模块）
+│   │   ├── scene-renderers/     #     场景渲染器（Slide/Quiz/Code/Diagram）
+│   │   ├── whiteboard/          #     SVG 白板（直接复用）
+│   │   ├── profile/             #     画像雷达图
+│   │   └── ui/                  #     基础 UI 组件（shadcn/ui + Radix）
+│   ├── lib/
+│   │   ├── ai/                  #     LLM Provider 抽象层
+│   │   ├── store/               #     Zustand 状态
+│   │   ├── types/               #     类型定义
+│   │   └── hooks/               #     React Hooks
+│   └── public/
+│
+├── backend/                     # Python 后端服务 (FastAPI)
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── agents/              #     多智能体定义
+│   │   ├── orchestration/       #     LangGraph 编排图
+│   │   ├── knowledge/           #     RAG 知识库
+│   │   ├── llm/                 #     讯飞星火适配
+│   │   ├── generation/          #     资源生成 Pipeline
+│   │   └── models/              #     数据模型
+│   ├── knowledge_base/          #     课程知识库文件
+│   └── requirements.txt
+│
+├── docker-compose.yml
+├── .env.example
+└── README.md</code></pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header"><h4>4.2 环境初始化</h4></div>
+    <div class="tech-list">
+      <span class="tag tag-frontend">Next.js 16</span>
+      <span class="tag tag-frontend">pnpm</span>
+      <span class="tag tag-backend">Python 3.11</span>
+      <span class="tag tag-backend">FastAPI</span>
+      <span class="tag tag-devops">Docker</span>
+    </div>
+    <pre><code># 1. 克隆 OpenMAIC 作为参考
+git clone https://github.com/THU-MAIC/OpenMAIC.git reference/
+# 不要 fork，而是学习其架构模式后从零搭建
+
+# 2. 创建项目
+mkdir learning-multiagent
+cd learning-multiagent
+
+# 3. 前端 — Next.js
+npx create-next-app@latest frontend --typescript --tailwind --app --src-dir=false
+cd frontend
+pnpm add ai @ai-sdk/react @ai-sdk/openai zustand echarts katex \
+         lucide-react zod nanoid jszip pptxgenjs sharp \
+         @langchain/core @langchain/langgraph
+pnpm add -D typescript @types/node
+
+# 4. 后端 — Python FastAPI
+cd ../backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install fastapi uvicorn[standard] langchain langgraph \
+            chromadb sentence-transformers pymupdf \
+            python-pptx python-dotenv redis psycopg2-binary \
+            spark-ai-python sse-starlette
+
+# 5. 注册讯飞开放平台
+#    访问 https://www.xfyun.cn/ 获取：
+#    - 星火大模型 APPID / APIKey / APISecret
+#    - TTS 在线语音合成 APPID / APIKey / APISecret</code></pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header"><h4>4.3 环境变量配置</h4></div>
+    <pre><code># .env (前端 Next.js 侧)
+# --- 讯飞星火 ---
+SPARK_APPID=your_appid
+SPARK_API_KEY=your_api_key
+SPARK_API_SECRET=your_api_secret
+SPARK_DOMAIN=4.0Ultra
+
+# --- 备用 LLM (可选) ---
+OPENAI_API_KEY=sk-...              # 备用，非必须
+ANTHROPIC_API_KEY=sk-ant-...       # 备用，非必须
+
+# --- 分阶段模型路由 (核心设计) ---
+# 轻量阶段用星火Lite，重量阶段用星火4.0 Ultra
+MODEL_ROUTES='{
+  "profile-extract": "spark:spark-lite",
+  "path-planning": "spark:spark-4.0-ultra",
+  "doc-generate": "spark:spark-4.0-ultra",
+  "quiz-generate": "spark:spark-4.0-ultra",
+  "tutor-chat": "spark:spark-4.0-ultra",
+  "eval-analyze": "spark:spark-pro"
+}'
+DEFAULT_MODEL=spark:spark-4.0-ultra
+
+# --- TTS ---
+TTS_SPARK_APPID=your_tts_appid
+TTS_SPARK_API_KEY=your_tts_api_key
+TTS_SPARK_API_SECRET=your_tts_api_secret
+
+# --- 部署 ---
+DATABASE_URL=postgresql://user:pass@localhost:5432/learning
+REDIS_URL=redis://localhost:6379</code></pre>
+  </div>
+</div>
+
+<!-- ==================== 5. LLM Provider ==================== -->
+<div class="section" id="sec5">
+  <h2><span class="num">05</span> 第2步：LLM Provider 抽象层 + 讯飞星火集成</h2>
+
+  <p>参考 OpenMAIC 的多 Provider 设计，建立统一的 LLM 接口层，将讯飞星火作为主力 Provider。</p>
+
+  <h3>5.1 Python 侧：星火 SDK 封装</h3>
+  <pre><code># backend/app/llm/spark_provider.py
+from sparkai.llm.llm import ChatSparkLLM
+from sparkai.core.messages import ChatMessage
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from typing import List, Optional, Iterator, AsyncIterator
+import os
+
+class SparkProvider(BaseChatModel):
+    """讯飞星火大模型 Provider — 适配 LangChain 接口"""
+
+    def __init__(self, domain: str = None, temperature: float = 0.7, **kwargs):
+        super().__init__(**kwargs)
+        self._spark = ChatSparkLLM(
+            spark_api_url=f"wss://spark-api.xf-yun.com/{domain or os.getenv('SPARK_DOMAIN', '4.0Ultra')}/chat",
+            spark_app_id=os.getenv("SPARK_APPID"),
+            spark_api_key=os.getenv("SPARK_API_KEY"),
+            spark_api_secret=os.getenv("SPARK_API_SECRET"),
+            spark_llm_domain=domain or os.getenv("SPARK_DOMAIN", "4.0Ultra"),
+            temperature=temperature,
+            streaming=True,
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        return "spark"
+
+    def _generate(self, messages: List[BaseMessage], stop=None, **kwargs):
+        spark_msgs = [ChatMessage(role=self._map_role(m), content=m.content)
+                      for m in messages]
+        response = self._spark.generate([spark_msgs])
+        # 解析响应...
+        return ChatResult(generations=[...])
+
+    @staticmethod
+    def _map_role(msg: BaseMessage) -> str:
+        if isinstance(msg, SystemMessage): return "system"
+        if isinstance(msg, HumanMessage): return "user"
+        if isinstance(msg, AIMessage): return "assistant"
+        return "user"
+
+
+# 多模型工厂函数
+class LLMFactory:
+    """分阶段模型路由 — 参考 OpenMAIC MODEL_ROUTES 设计"""
+
+    _instances = {}
+
+    @staticmethod
+    def get_for_stage(stage: str) -> BaseChatModel:
+        """根据阶段返回对应模型实例"""
+        routes = json.loads(os.getenv("MODEL_ROUTES", "{}"))
+        model_spec = routes.get(stage, os.getenv("DEFAULT_MODEL", "spark:spark-4.0-ultra"))
+        return LLMFactory._get_or_create(model_spec)
+
+    @staticmethod
+    def _get_or_create(spec: str) -> BaseChatModel:
+        if spec in LLMFactory._instances:
+            return LLMFactory._instances[spec]
+
+        provider, model = spec.split(":", 1)
+        if provider == "spark":
+            instance = SparkProvider(domain=model, temperature=0.7)
+        elif provider == "openai":
+            from langchain_openai import ChatOpenAI
+            instance = ChatOpenAI(model=model)
+        # ... 其他 Provider
+        LLMFactory._instances[spec] = instance
+        return instance</code></pre>
+
+  <h3>5.2 前端侧：AI SDK 流式调用</h3>
+  <pre><code>// frontend/lib/ai/provider.ts
+// 参考 OpenMAIC 的 Vercel AI SDK + SSE 流式模式
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+
+// 自定义讯飞 Provider (OpenAI 兼容模式)
+const spark = createOpenAI({
+  baseURL: process.env.SPARK_BASE_URL || 'https://spark-api-open.xf-yun.com/v1',
+  apiKey: process.env.SPARK_API_KEY,
+});
+
+export function getModel(stage?: string) {
+  // 分阶段路由逻辑
+  const routes = JSON.parse(process.env.MODEL_ROUTES || '{}');
+  const modelId = stage ? routes[stage] : undefined;
+  // 解析 provider:model 格式
+  return spark(modelId || 'spark-4.0-ultra');
+}</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">关键设计决策：分阶段路由</div>
+    <p>参考 OpenMAIC 的核心设计：不同任务阶段使用不同模型/参数。对于赛题，建议：</p>
+    <ul>
+      <li><strong>画像抽取</strong>：星火 Lite（快速、低成本，频繁调用）</li>
+      <li><strong>资源生成</strong>：星火 4.0 Ultra（高质量，深度推理）</li>
+      <li><strong>智能辅导</strong>：星火 4.0 Ultra（需要准确回答）</li>
+      <li><strong>效果评估</strong>：星火 Pro（折中速度和准确度）</li>
+      <li>这在文档中是<strong>重要的技术亮点</strong>，体现对 AI 技术融合的深入理解</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 6. LangGraph ==================== -->
+<div class="section" id="sec6">
+  <h2><span class="num">06</span> 第3步：LangGraph 多智能体编排 — 系统的心脏</h2>
+
+  <p>这是赛题要求"多智能体协同框架"的核心实现。参考 OpenMAIC 用 LangGraph 编排 AI 教师和 AI 同学的讨论流程，我们用 LangGraph 编排从<strong>画像构建→路径规划→资源生成→辅导→评估</strong>的完整学习闭环。</p>
+
+  <h3>6.1 整体编排图</h3>
+  <div class="arch-diagram">
+┌────────────────── LangGraph State Machine ──────────────────┐
+│                                                             │
+│  START                                                      │
+│    │                                                        │
+│    ▼                                                        │
+│  ┌──────────────┐                                           │
+│  │ 画像构建节点   │  ← profile_extractor                    │
+│  │ (profile_node)│     对话抽取 6 维度，更新画像             │
+│  └──────┬───────┘                                           │
+│         │ student_profile                                   │
+│         ▼                                                   │
+│  ┌──────────────┐                                           │
+│  │ 路径规划节点   │  ← path_planner                         │
+│  │ (planner_node)│     分析画像+需求 → 生成路径+资源清单     │
+│  └──────┬───────┘                                           │
+│         │ resource_tasks[]                                  │
+│         ▼                                                   │
+│  ┌──────────────────────────────────────┐                   │
+│  │     资源生成集群 (并行执行)             │                   │
+│  │  ┌────────┐ ┌────────┐ ┌────────┐    │                   │
+│  │  │doc_node│ │quiz_node│ │map_node│    │                   │
+│  │  └────────┘ └────────┘ └────────┘    │                   │
+│  │  ┌────────┐ ┌────────┐ ┌────────┐    │                   │
+│  │  │vid_node│ │code_node│ │read_node│    │                   │
+│  │  └────────┘ └────────┘ └────────┘    │                   │
+│  └──────────────┬───────────────────────┘                   │
+│                 │ generated_resources[]                     │
+│                 ▼                                           │
+│  ┌──────────────┐     ┌──────────────┐                      │
+│  │ 学习路径推送到 │ ──→ │ 辅导答疑节点   │ ← tutor_node       │
+│  │  前端 (输出)  │     └──────┬───────┘                      │
+│  └──────────────┘            │ user_question                │
+│                               ▼                              │
+│                         ┌──────────────┐                    │
+│                         │ 效果评估节点   │ ← eval_node       │
+│                         │ (eval_node)   │   分析学习数据      │
+│                         └──────┬───────┘                    │
+│                                │ evaluation_result          │
+│                                ▼                            │
+│                         ┌──────────────┐                    │
+│                         │ 画像更新节点   │ ← 反馈回路        │
+│                         └──────────────┘                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>6.2 核心实现</h3>
+  <pre><code># backend/app/orchestration/graph.py
+from typing import TypedDict, List, Optional, Annotated
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
+import operator
+
+class LearningState(TypedDict):
+    """全局状态 — LangGraph 共享上下文"""
+    session_id: str
+    user_message: str
+    # 画像
+    student_profile: dict              # 6维度画像
+    profile_updated: bool
+    # 路径规划
+    learning_path: dict                # 路径规划结果
+    resource_tasks: List[dict]         # 待生成的资源清单
+    # 资源生成 (聚合)
+    generated_resources: Annotated[List[dict], operator.add]
+    # 辅导
+    tutor_response: Optional[str]
+    # 评估
+    evaluation: Optional[dict]
+    # 控制
+    next_action: str                   # 下一步动作
+
+
+async def profile_node(state: LearningState) -> LearningState:
+    """节点1：画像构建 — 从对话中抽取学生特征"""
+    from app.agents.profile_extractor import ProfileExtractorAgent
+    agent = ProfileExtractorAgent()
+    profile = await agent.extract(state["session_id"], state["user_message"])
+    return {
+        **state,
+        "student_profile": profile,
+        "profile_updated": True,
+        "next_action": "plan",
+    }
+
+async def planner_node(state: LearningState) -> LearningState:
+    """节点2：路径规划 — 分析画像，规划学习路径"""
+    from app.agents.path_planner import PathPlannerAgent
+    agent = PathPlannerAgent()
+    path_result = await agent.plan(
+        profile=state["student_profile"],
+        request=state["user_message"]
+    )
+    return {
+        **state,
+        "learning_path": path_result["path"],
+        "resource_tasks": path_result["resource_tasks"],
+        "next_action": "generate_resources",
+    }
+
+async def resource_doc_node(state: LearningState) -> LearningState:
+    """节点3a：文档生成 Agent"""
+    from app.agents.doc_agent import DocAgent
+    agent = DocAgent()
+    result = await agent.generate(
+        profile=state["student_profile"],
+        task=next(t for t in state["resource_tasks"] if t["type"] == "doc")
+    )
+    return {"generated_resources": [result]}
+
+async def resource_quiz_node(state: LearningState) -> LearningState:
+    """节点3b：题库生成 Agent — 复用 OpenMAIC 测验系统"""
+    from app.agents.quiz_agent import QuizAgent
+    agent = QuizAgent()
+    result = await agent.generate(
+        profile=state["student_profile"],
+        task=next((t for t in state["resource_tasks"]
+                   if t["type"] == "quiz"), None)
+    )
+    return {"generated_resources": [result]}
+
+# ... reader_node, mindmap_node, video_node, code_node 类似定义
+
+async def evaluator_node(state: LearningState) -> LearningState:
+    """节点5：效果评估"""
+    from app.agents.evaluator import EvalAgent
+    agent = EvalAgent()
+    eval_result = await agent.evaluate(
+        session_id=state["session_id"],
+        profile=state["student_profile"],
+        resources=state["generated_resources"],
+    )
+    return {
+        **state,
+        "evaluation": eval_result,
+        "student_profile": eval_result.get("profile_update",
+                                            state["student_profile"]),
+        "next_action": "end",
+    }
+
+
+def build_learning_graph() -> CompiledStateGraph:
+    """构建学习编排图"""
+    builder = StateGraph(LearningState)
+
+    # 添加节点
+    builder.add_node("profile", profile_node)
+    builder.add_node("planner", planner_node)
+    builder.add_node("doc_gen", resource_doc_node)
+    builder.add_node("quiz_gen", resource_quiz_node)
+    builder.add_node("mindmap_gen", resource_mindmap_node)
+    builder.add_node("video_gen", resource_video_node)
+    builder.add_node("code_gen", resource_code_node)
+    builder.add_node("reading_gen", resource_reading_node)
+    builder.add_node("tutor", tutor_node)
+    builder.add_node("evaluator", evaluator_node)
+
+    # 定义边
+    builder.add_edge(START, "profile")
+    builder.add_edge("profile", "planner")
+
+    # 规划完成后 → 并行分发到所有资源生成节点
+    builder.add_edge("planner", "doc_gen")
+    builder.add_edge("planner", "quiz_gen")
+    builder.add_edge("planner", "mindmap_gen")
+    builder.add_edge("planner", "video_gen")
+    builder.add_edge("planner", "code_gen")
+    builder.add_edge("planner", "reading_gen")
+
+    # 所有资源生成完成后 → 辅导
+    builder.add_edge("doc_gen", "tutor")
+    builder.add_edge("quiz_gen", "tutor")
+    builder.add_edge("mindmap_gen", "tutor")
+    builder.add_edge("video_gen", "tutor")
+    builder.add_edge("code_gen", "tutor")
+    builder.add_edge("reading_gen", "tutor")
+
+    # 辅导 → 评估 → 结束
+    builder.add_edge("tutor", "evaluator")
+    builder.add_edge("evaluator", END)
+
+    return builder.compile()
+
+
+# 全局编排图实例
+learning_graph = build_learning_graph()</code></pre>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 OpenMAIC 模式复用要点</div>
+    <ul>
+      <li><strong>StateGraph 状态机</strong>：与 OpenMAIC 的课堂播放状态机思路一致，管理学习全流程</li>
+      <li><strong>并行分发</strong>：规划完成后 6 个资源 Agent 并行执行，大幅缩短生成时间</li>
+      <li><strong>Annotated[List, operator.add]</strong>：多节点写入同一字段自动聚合，LangGraph 原生支持</li>
+      <li><strong>动态路由</strong>：根据画像的 cognitive_style 在 planner 中决定资源生成的优先级和类型</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 7. RAG ==================== -->
+<div class="section" id="sec7">
+  <h2><span class="num">07</span> 第4步：知识库与 RAG 系统</h2>
+
+  <p>参考 OpenMAIC 的文档导入（UnPDF / MinerU）机制，但扩展为完整的 RAG 管线。这是<strong>防幻觉</strong>的核心基础设施。</p>
+
+  <h3>7.1 知识库构建</h3>
+  <p>选择一门高校课程构建知识库，建议"<strong>人工智能导论</strong>"或"<strong>数据结构与算法</strong>"，知识点层次分明。</p>
+  <pre><code># backend/app/knowledge/build_index.py
+from langchain_community.document_loaders import PyMuPDFLoader, UnstructuredPowerPointLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.vectorstores import Chroma
+import glob, os
+
+# 1. 加载所有课程文档
+documents = []
+for pdf in glob.glob("knowledge_base/**/*.pdf", recursive=True):
+    documents.extend(PyMuPDFLoader(pdf).load())
+for pptx in glob.glob("knowledge_base/**/*.pptx", recursive=True):
+    documents.extend(UnstructuredPowerPointLoader(pptx).load())
+
+# 2. 智能分块
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500, chunk_overlap=50,
+    separators=["\n\n", "\n", "。", ".", " ", ""]
+)
+chunks = text_splitter.split_documents(documents)
+
+# 3. 构建向量索引
+embeddings = HuggingFaceBgeEmbeddings(
+    model_name="BAAI/bge-m3",
+    model_kwargs={"device": "cpu"},
+)
+vectorstore = Chroma.from_documents(
+    chunks, embeddings,
+    persist_directory="./chroma_db"
+)
+print(f"知识库构建完成：{len(chunks)} 个文本块")</code></pre>
+
+  <h3>7.2 RAG 检索接口</h3>
+  <pre><code># backend/app/knowledge/retriever.py
+class KnowledgeRetriever:
+    """RAG检索 + 4层防幻觉"""
+
+    def __init__(self):
+        self.embeddings = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-m3")
+        self.vectorstore = Chroma(
+            persist_directory="./chroma_db",
+            embedding_function=self.embeddings,
+        )
+
+    def search(self, query: str, k: int = 5) -> List[str]:
+        """检索最相关的知识片段"""
+        docs = self.vectorstore.similarity_search(query, k=k)
+        return [doc.page_content for doc in docs]
+
+    def verify_facts(self, generated_text: str) -> dict:
+        """第3层防护：事实核查 — 生成后的交叉验证"""
+        # 从生成文本中提取关键声明
+        claims = self._extract_key_claims(generated_text)
+        results = {}
+        for claim in claims:
+            evidence = self.search(claim, k=3)
+            results[claim] = {
+                "evidence": evidence,
+                "confidence": self._calc_confidence(claim, evidence)
+            }
+        return results</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">知识库 RAG 是防幻觉的基础</div>
+    <p>所有资源生成 Agent 在调用 LLM 时，<strong>必须先检索知识库</strong>，将检索结果作为上下文提供给 LLM。换言之，LLM 不是"凭空生成"，而是"基于知识库内容重组"。这确保了学术内容的准确性。赛题明确要求"防幻觉"，这是最核心的工程方案。</p>
+  </div>
+</div>
+
+<!-- ==================== 8. 画像构建 ==================== -->
+<div class="section" id="sec8">
+  <h2><span class="num">08</span> 第5步：对话式学习画像构建</h2>
+
+  <p>功能需求第1项。核心是 <strong>自然的对话交互 → 结构化画像抽取 → 随学随更新</strong>。</p>
+
+  <h3>8.1 前端：流式对话组件</h3>
+  <pre><code>// frontend/app/profile/page.tsx
+'use client';
+import { useChat } from '@ai-sdk/react';  // Vercel AI SDK
+
+export function ProfileChat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading }
+    = useChat({
+      api: '/api/chat/profile',
+      onFinish: (message) => {
+        // 对话结束后自动触发画像更新
+        fetchProfile();  // 刷新雷达图
+      },
+    });
+
+  return (
+    &lt;div className="flex flex-col h-full"&gt;
+      {/* 消息列表 */}
+      &lt;div className="flex-1 overflow-y-auto space-y-4 p-4"&gt;
+        {messages.map(msg => (
+          &lt;ChatMessage key={msg.id} message={msg} /&gt;
+        ))}
+      &lt;/div&gt;
+      {/* 输入框 */}
+      &lt;form onSubmit={handleSubmit} className="p-4 border-t"&gt;
+        &lt;input
+          value={input} onChange={handleInputChange}
+          placeholder="告诉我你的学习情况..."
+          className="w-full rounded-lg border p-3"
+        /&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+  <h3>8.2 后端：画像抽取 Agent</h3>
+  <pre><code># backend/app/agents/profile_extractor.py
+class ProfileExtractorAgent:
+    """画像构建 Agent — LangGraph 节点"""
+
+    async def extract(self, session_id: str, message: str) -> dict:
+        llm = LLMFactory.get_for_stage("profile-extract")
+
+        # 1. 获取历史画像（增量更新）
+        history = await self._get_profile(session_id)
+        # 2. 检索知识库上下文（辅助判断知识水平）
+        knowledge = KnowledgeRetriever().search(message, k=3)
+
+        # 3. Prompt：抽取6个维度
+        prompt = f"""基于学生对话，更新其学习画像。只输出JSON。
+
+        当前画像：{json.dumps(history)}
+        知识上下文：{knowledge}
+
+        必须提取以下6个维度（无法判断的维度保持原值）：
+        {{
+          "knowledge_level": {{"知识点1": 分数, ...}},  // 0-100
+          "cognitive_style": "visual"|"auditory"|"reading"|"kinesthetic",
+          "error_patterns": ["易错类型1", ...],
+          "learning_goal": "exam"|"project"|"research"|"interest",
+          "learning_pace": "fast"|"medium"|"slow",
+          "interests": ["AI", "NLP", ...]
+        }}
+
+        学生消息：{message}"""
+
+        response = await llm.ainvoke(prompt)
+        profile = json.loads(self._extract_json(response.content))
+
+        # 4. 持久化到 PostgreSQL
+        await self._save_profile(session_id, profile)
+        return profile</code></pre>
+
+  <h3>8.3 前端：画像雷达图可视化</h3>
+  <pre><code>// frontend/components/profile/ProfileRadar.tsx
+import ReactECharts from 'echarts-for-react';
+
+export function ProfileRadar({ profile }) {
+  const option = {
+    radar: {
+      indicator: [
+        { name: '知识基础', max: 100 },
+        { name: '风格匹配度', max: 100 },
+        { name: '弱点改善', max: 100 },
+        { name: '目标明确度', max: 100 },
+        { name: '节奏适合度', max: 100 },
+        { name: '兴趣覆盖', max: 100 },
+      ],
+    },
+    series: [{
+      type: 'radar',
+      data: [{
+        value: [
+          profile.avg_knowledge,      // 平均知识水平
+          profile.style_match,        // 风格匹配度
+          profile.improvement,         // 弱点改善率
+          profile.goal_clarity,        // 目标明确度
+          profile.pace_score,           // 节奏评分
+          profile.interest_breadth,     // 兴趣广度
+        ],
+        name: '学习画像',
+      }],
+    }],
+  };
+
+  return &lt;ReactECharts option={option} /&gt;;
+}</code></pre>
+</div>
+
+<!-- ==================== 9. 资源生成 Pipeline ==================== -->
+<div class="section" id="sec9">
+  <h2><span class="num">09</span> 第6步：资源生成 Pipeline — 赛题核心</h2>
+
+  <p>功能需求第2项。参考 OpenMAIC 的两阶段生成 Pipeline（大纲→场景内容），我们将它改造为"学习路径→资源生成"Pipeline。</p>
+
+  <h3>9.1 生成 Pipeline 概览</h3>
+  <div class="arch-diagram">
+资源生成 Pipeline (参考 OpenMAIC generation/ 目录):
+────────────────────────────────────────────────────
+1. pipeline-types.ts ───→ 定义 6 种资源类型的 Schema
+2. outline-generator ───→ 学习路径规划 Agent 输出"资源大纲"
+3. scene-generator ─────→ 每种资源类型独立的生成器
+4. pipeline-runner ─────→ 协调并发生成、进度追踪
+5. interactive-post-processor → 内容后处理（LaTeX等）
+6. json-repair ─────────→ 自动修复 LLM 输出中的 JSON 错误
+7. action-parser ───────→ 解析资源中的交互动作
+
+生成进度 SSE 推送到前端：
+  [Agent 开始] → [检索知识库] → [生成中...] → [后处理]
+  → [资源卡片推送到前端]
+────────────────────────────────────────────────────
+  </div>
+
+  <h3>9.2 6种资源生成方案</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>资源类型</th><th>负责 Agent</th><th>技术实现</th><th>输出格式</th><th>OpenMAIC 复用</th></tr>
+      <tr>
+        <td>课程讲解文档</td><td>DocAgent</td>
+        <td>RAG → LLM 结构化生成 → Canvas 幻灯片渲染 → PPTX 导出</td>
+        <td>Markdown + PPTX</td>
+        <td>Slide 场景 + pptxgenjs 导出</td>
+      </tr>
+      <tr>
+        <td>知识点思维导图</td><td>MindmapAgent</td>
+        <td>LLM 生成层次结构 → Mermaid / 树形图渲染</td>
+        <td>JSON树 + SVG</td>
+        <td>Diagram Widget</td>
+      </tr>
+      <tr>
+        <td>练习题库</td><td>QuizAgent</td>
+        <td>RAG → LLM 生成题目+答案+解析 → 4种题型模板</td>
+        <td>JSON</td>
+        <td>Quiz 场景（直接复用）</td>
+      </tr>
+      <tr>
+        <td>教学视频/动画</td><td>VideoAgent</td>
+        <td>LLM 分镜脚本 → 讯飞 TTS 配音 → Canvas 动画 → ffmpeg 合成</td>
+        <td>MP4</td>
+        <td>Canvas 动画 + 新增 TTS</td>
+      </tr>
+      <tr>
+        <td>代码实操案例</td><td>CodeAgent</td>
+        <td>LLM 生成代码+注释 → 在线沙箱执行验证</td>
+        <td>代码文件+文档</td>
+        <td>Online-Coding 场景（直接复用）</td>
+      </tr>
+      <tr>
+        <td>拓展阅读材料</td><td>ReadingAgent</td>
+        <td>RAG + 网络搜索 → LLM 筛选排序</td>
+        <td>JSON资源列表</td>
+        <td>新增</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>9.3 教学视频生成实现（亮点功能）</h3>
+  <pre><code># backend/app/agents/video_agent.py
+class VideoAgent:
+    """教学视频生成 Agent"""
+
+    async def generate(self, profile: dict, task: dict) -> dict:
+        llm = LLMFactory.get_for_stage("doc-generate")
+        knowledge = KnowledgeRetriever().search(task["topic"], k=5)
+
+        # 1. 生成视频分镜脚本
+        script_prompt = f"""设计一个3-5分钟教学视频的分镜脚本。
+        主题：{task['topic']}
+        知识内容：{knowledge}
+        学生画像：{json.dumps(profile)}
+
+        输出JSON：
+        {{"scenes": [{{"narration": "旁白", "visual": "画面描述", "duration": 15}}]}}"""
+
+        script = json.loads(await llm.ainvoke(script_prompt).content.strip("```json").strip("```"))
+
+        # 2. 讯飞 TTS 生成语音
+        from app.llm.spark_tts import SparkTTS
+        tts = SparkTTS()
+        audio_files = []
+        for i, scene in enumerate(script["scenes"]):
+            audio = await tts.synthesize(
+                text=scene["narration"],
+                voice="xiao_yan",  # 讯飞女声
+                speed=1.0,
+            )
+            audio_files.append(audio)
+
+        # 3. 生成配图/动画
+        visuals = await self._generate_visuals(
+            [s["visual"] for s in script["scenes"]],
+            task["topic"]
+        )
+
+        # 4. ffmpeg 合成视频
+        video_path = await self._compose_video(audio_files, visuals)
+
+        return {
+            "type": "video",
+            "video_path": video_path,
+            "script": script,
+            "duration": sum(s["duration"] for s in script["scenes"]),
+            "title": f"{task['topic']} — 教学视频",
+        }</code></pre>
+</div>
+
+<!-- ==================== 10. 学习路径 ==================== -->
+<div class="section" id="sec10">
+  <h2><span class="num">10</span> 第7步：个性化学习路径规划</h2>
+
+  <p>功能需求第3项。Planner Agent 分析画像和需求，输出有序的学习步骤。</p>
+
+  <h3>10.1 路径规划算法</h3>
+  <pre><code># backend/app/agents/path_planner.py
+class PathPlannerAgent:
+    """路径规划 Agent — 核心逻辑"""
+
+    async def plan(self, profile: dict, request: str) -> dict:
+        llm = LLMFactory.get_for_stage("path-planning")
+        knowledge = KnowledgeRetriever().search(request, k=10)
+
+        prompt = f"""根据学生画像和学习需求，规划个性化学习路径。
+
+        学生画像：{json.dumps(profile)}
+        知识库内容片段：{knowledge}
+        学习需求：{request}
+
+        输出JSON格式的学习路径。根据学生的认知风格调整资源类型优先级：
+        - visual: 文档+导图优先
+        - auditory: 视频优先
+        - kinesthetic: 代码实操+题库优先
+        - reading: 文档+阅读材料优先
+
+        {{
+          "path_title": "学习路径标题",
+          "estimated_time": "2.5h",
+          "steps": [
+            {{
+              "step": 1,
+              "title": "步骤标题",
+              "description": "步骤描述",
+              "resource_tasks": [
+                {{"type": "doc|quiz|mindmap|video|code|reading", "topic": "..."}}
+              ],
+              "estimated_minutes": 20
+            }}
+          ]
+        }}"""
+
+        response = await llm.ainvoke(prompt)
+        return json.loads(self._extract_json(response.content))</code></pre>
+
+  <h3>10.2 动态调整逻辑</h3>
+  <pre><code># 学习路径动态调整（评估Agent触发）
+async def adjust_learning_path(state: LearningState) -> LearningState:
+    """根据测评结果动态调整路径"""
+    evaluation = state["evaluation"]
+    current_path = state["learning_path"]
+
+    if assessment["mastery_level"] > 0.8:
+        # 掌握良好 → 跳过基础步骤，进入进阶
+        current_path = skip_basic_steps(current_path)
+    elif assessment["mastery_level"] < 0.6:
+        # 掌握不足 → 回退重学
+        current_path = insert_review_steps(
+            current_path, assessment["weak_points"]
+        )
+
+    return {**state, "learning_path": current_path}</code></pre>
+</div>
+
+<!-- ==================== 11. 加分项 ==================== -->
+<div class="section" id="sec11">
+  <h2><span class="num">11</span> 第8步：智能辅导 + 效果评估（加分项）</h2>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">为什么一定要做加分项</div>
+    <p>功能实现占45%，两个加分项在这45%中显著拉开差距。"画像构建→资源生成→路径规划→辅导→评估→画像更新"形成完整闭环，体现"创新价值"。参考 OpenMAIC 已有的多智能体讨论 + 白板 + TTS + 测验评分系统，大部分基础能力可复用。</p>
+  </div>
+
+  <h3>11.1 智能辅导 Agent</h3>
+  <pre><code># backend/app/agents/tutor.py
+class TutorAgent:
+    """智能辅导 Agent — 多模态答疑"""
+
+    async def answer(self, session_id: str, question: str,
+                     profile: dict) -> dict:
+        llm = LLMFactory.get_for_stage("tutor-chat")
+        knowledge = KnowledgeRetriever().search(question, k=5)
+
+        response = await llm.ainvoke(f"""
+        你是学习辅导员。基于知识库内容回答学生问题。
+        根据学生画像({json.dumps(profile)})调整解答方式。
+
+        知识库上下文: {knowledge}
+        学生提问: {question}
+
+        输出JSON:
+        {{
+          "text": "文字解答",
+          "diagram": "Mermaid语法的图解(如果有助于理解)",
+          "code": "代码示例(如果是编程问题)",
+          "audio_required": true/false
+        }}
+        """)
+
+        result = json.loads(response.content)
+
+        # 如果学生是听觉型或问题复杂，生成语音讲解
+        if result.get("audio_required") or \
+           profile.get("cognitive_style") == "auditory":
+            tts = SparkTTS()
+            result["audio_url"] = await tts.synthesize(result["text"])
+
+        return result</code></pre>
+
+  <h3>11.2 学习效果评估 Agent</h3>
+  <pre><code># backend/app/agents/evaluator.py
+class EvalAgent:
+    """评估 Agent — 5 维度分析"""
+
+    async def evaluate(self, session_id: str,
+                       profile: dict, resources: list) -> dict:
+        # 收集学习行为数据
+        stats = await self._collect_stats(session_id)
+
+        return {
+            "overall_score": self._calc_overall(stats),
+            "knowledge_mastery": stats["quiz_scores"],     # 题库正确率
+            "behavior_analysis": {                          # 行为分析
+                "total_time": stats["total_time"],
+                "completion_rate": stats["completion_rate"],
+                "review_frequency": stats["review_count"],
+            },
+            "weak_points": self._identify_weaknesses(stats["errors"]),
+            "progress_trend": self._calc_trend(stats["history"]),
+            "recommendations": self._generate_recommendations(stats),
+            "profile_update": self._suggest_profile_update(stats, profile),
+        }</code></pre>
+</div>
+
+<!-- ==================== 12. 前端 ==================== -->
+<div class="section" id="sec12">
+  <h2><span class="num">12</span> 第9步：前端界面开发</h2>
+
+  <h3>页面规划与组件映射</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>页面/路由</th><th>功能</th><th>组件（OpenMAIC 复用）</th></tr>
+      <tr>
+        <td><code>/</code> 首页</td>
+        <td>开始对话，输入学习需求</td>
+        <td>Chat 输入框 + 大纲展示</td>
+      </tr>
+      <tr>
+        <td><code>/profile</code> 画像页</td>
+        <td>查看/更新学习画像</td>
+        <td>ProfileRadar (ECharts) + 6维度详情卡片</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]</code> 学习中心</td>
+        <td>查看学习路径 + 浏览资源</td>
+        <td>Timeline 时间线 + 资源卡片网格</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]/doc</code> 文档页</td>
+        <td>阅读课程讲解文档</td>
+        <td>Canvas 幻灯片渲染器（直接复用）</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]/quiz</code> 题库页</td>
+        <td>做练习测验</td>
+        <td>Quiz 场景渲染器（直接复用）</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]/mindmap</code> 导图页</td>
+        <td>查看知识点思维导图</td>
+        <td>Mermaid / 树形图组件</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]/video</code> 视频页</td>
+        <td>观看教学视频</td>
+        <td>视频播放器 + 分镜时间线</td>
+      </tr>
+      <tr>
+        <td><code>/learn/[id]/code</code> 代码页</td>
+        <td>在线代码实操</td>
+        <td>Online-Coding 场景（直接复用）</td>
+      </tr>
+      <tr>
+        <td><code>/tutor</code> 辅导页</td>
+        <td>智能辅导对话</td>
+        <td>Chat 组件 + SVG 白板（直接复用）</td>
+      </tr>
+      <tr>
+        <td><code>/eval</code> 评估页</td>
+        <td>查看学习效果报告</td>
+        <td>ECharts 雷达图 + 趋势折线图 + 弱点热力图</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="step-card">
+    <div class="step-card-header"><h4>核心 UI 技术要点</h4></div>
+    <div class="tech-list">
+      <span class="tag tag-frontend">Tailwind 4</span>
+      <span class="tag tag-frontend">shadcn/ui</span>
+      <span class="tag tag-frontend">Zustand</span>
+      <span class="tag tag-frontend">ECharts</span>
+    </div>
+    <ol>
+      <li><strong>响应式布局</strong>：Tailwind 4 + shadcn/ui，支持桌面/平板/手机</li>
+      <li><strong>流式输出</strong>：Vercel AI SDK 的 <code>useChat</code> Hook 原生支持 SSE 流式消息</li>
+      <li><strong>Markdown 渲染</strong>：KATEX 数学公式 + Shiki 代码高亮 + Mermaid 图表</li>
+      <li><strong>状态管理</strong>：Zustand store 管理画像、学习路径、当前资源等全局状态</li>
+      <li><strong>Canvas 幻灯片</strong>：从 OpenMAIC 复用的幻灯片引擎，Markdown → 精美课件</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ==================== 13. 防幻觉 ==================== -->
+<div class="section" id="sec13">
+  <h2><span class="num">13</span> 第10步：四层防幻觉 + 内容安全机制</h2>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th width="8%">层级</th><th width="20%">机制</th><th>技术实现</th></tr>
+      <tr>
+        <td>第1层</td><td><strong>检索约束</strong></td>
+        <td>所有 LLM 调用前，先通过 RAG 检索知识库获取准确内容，作为 Prompt 上下文强制约束</td>
+      </tr>
+      <tr>
+        <td>第2层</td><td><strong>Prompt 约束</strong></td>
+        <td>System Prompt 明确规则："仅基于提供的知识库内容回答，不确定时请说明'当前知识库中暂无此内容'"</td>
+      </tr>
+      <tr>
+        <td>第3层</td><td><strong>事实核查</strong></td>
+        <td>生成后再次用 RAG 检索，交叉验证关键事实的准确性。对数值、公式、代码做特别检查</td>
+      </tr>
+      <tr>
+        <td>第4层</td><td><strong>引用标注</strong></td>
+        <td>在文档中标注内容来源（教材章节/页码），便于评审时验证准确性</td>
+      </tr>
+    </table>
+  </div>
+
+  <pre><code># 防幻觉 System Prompt 模板
+SYSTEM_PROMPT = """你是教育内容生成助手，严格遵循以下规则：
+
+1. 【知识来源】仅基于提供的【知识库内容】生成学习资源。
+   不得编造知识库中不存在的信息。
+2. 【不确定声明】如果知识库中没有足够信息回答某个具体问题，
+   请明确说明：「当前知识库中暂无此内容，建议查阅其他资料。」
+3. 【引用来源】生成内容时必须标注知识来源。
+   格式：「（参考：[教材名] 第X章 第Y节）」
+4. 【关键内容核查】对于数值、公式、代码等关键内容，
+   必须确保与知识库原文一致，不得改动。
+5. 【内容边界】仅生成与指定课程知识相关的教育内容，
+   不得生成与学习无关的内容。
+
+【知识库内容】：
+{retrieved_context}"""</code></pre>
+
+  <div class="callout callout-danger">
+    <div class="callout-title">防幻觉在评分中的重要性</div>
+    <p>赛题原文写明："需设计完善的'防幻觉'与内容安全过滤机制"。这是非功能性需求中的明确要求，如果评审时发现生成的课程内容有事实错误（如公式错误、概念混淆），会严重影响"功能实现及技术要求"45%的评分。</p>
+  </div>
+</div>
+
+<!-- ==================== 14. 测试 ==================== -->
+<div class="section" id="sec14">
+  <h2><span class="num">14</span> 第11步：测试与优化</h2>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>测试类型</th><th>内容</th><th>工具</th></tr>
+      <tr><td>单元测试</td><td>各 Agent 节点逻辑、RAG 检索精度、画像抽取准确性</td><td>pytest + vitest</td></tr>
+      <tr><td>集成测试</td><td>LangGraph 编排端到端流程</td><td>pytest + httpx</td></tr>
+      <tr><td>前端测试</td><td>组件渲染、SSE 流式接收、Canvas 幻灯片播放</td><td>Vitest + Playwright</td></tr>
+      <tr><td>内容质量测试</td><td>生成资源准确性、幻觉率</td><td>人工抽检 + 自动事实核查</td></tr>
+      <tr><td>性能测试</td><td>资源生成时间、并发能力</td><td>locust</td></tr>
+    </table>
+  </div>
+
+  <h4>性能优化要点</h4>
+  <ul>
+    <li><strong>并行生成</strong>：6 个资源 Agent 通过 LangGraph 并行分发，而非串行等待</li>
+    <li><strong>SSE 流式推送</strong>：Vercel AI SDK 原生 SSE，用户看到打字机效果而非白屏等待</li>
+    <li><strong>结果缓存</strong>：RAG 检索结果用 Redis 缓存（相同知识点不重复检索）</li>
+    <li><strong>任务队列</strong>：视频生成等长耗时任务用 Celery/Redis Queue 异步处理</li>
+    <li><strong>分阶段路由</strong>：高频低成本的画像抽取用 Lite 模型，低频高价值的资源生成用 Ultra 模型</li>
+  </ul>
+</div>
+
+<!-- ==================== 15. 部署 ==================== -->
+<div class="section" id="sec15">
+  <h2><span class="num">15</span> 第12步：部署与提交物</h2>
+
+  <h3>15.1 Docker Compose 一键部署</h3>
+  <pre><code># docker-compose.yml（参考 OpenMAIC 的部署方案）
+services:
+  frontend:
+    build: ./frontend
+    ports: ["3000:3000"]
+    environment:
+      - SPARK_APPID=${SPARK_APPID}
+      - SPARK_API_KEY=${SPARK_API_KEY}
+      - BACKEND_URL=http://backend:8000
+    depends_on: [backend]
+
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis]
+    environment:
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/learning
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+      - chroma_data:/app/chroma_db
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: learning
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes: [pg_data:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  pg_data:
+  chroma_data:</code></pre>
+
+  <h3>15.2 提交物清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>提交项</th><th>要求</th><th>建议工具</th></tr>
+      <tr><td>项目源码 + 配置</td><td>可运行，Docker 一键启动</td><td>GitHub 仓库 + Docker Compose</td></tr>
+      <tr><td>系统开发说明书</td><td>需求分析→架构设计→技术实现→创新点</td><td>Word/Markdown → PDF</td></tr>
+      <tr><td>测试说明书</td><td>测试方案、用例、结果</td><td>Word/Markdown → PDF</td></tr>
+      <tr><td>演示视频</td><td>≤7分钟，展示全部功能</td><td>OBS 录屏 + 剪映</td></tr>
+      <tr><td>演示 PPT</td><td>突出创新价值与 AI 技术融合</td><td>PowerPoint</td></tr>
+      <tr><td>AI Coding 工具说明</td><td>科大讯飞工具使用说明</td><td>文档独立章节</td></tr>
+      <tr><td>开源标注</td><td>所有开源项目名称+来源+版本+许可证</td><td>文档附录</td></tr>
+    </table>
+  </div>
+
+  <h3>15.3 开源标注清单（务必在文档中标注）</h3>
+  <table>
+    <tr><th>项目</th><th>版本</th><th>许可证</th><th>用途</th></tr>
+    <tr><td>OpenMAIC (THU-MAIC)</td><td>v0.3.0</td><td>MIT</td><td>架构参考：多智能体编排、场景系统、前端组件</td></tr>
+    <tr><td>LangGraph (LangChain)</td><td>1.1</td><td>MIT</td><td>多智能体状态图编排</td></tr>
+    <tr><td>LangChain</td><td>0.2+</td><td>MIT</td><td>LLM 编排、RAG 管道</td></tr>
+    <tr><td>Next.js (Vercel)</td><td>16</td><td>MIT</td><td>全栈应用框架</td></tr>
+    <tr><td>Chroma (ChromaDB)</td><td>0.5+</td><td>Apache 2.0</td><td>向量数据库</td></tr>
+    <tr><td>BGE-M3 (BAAI)</td><td>latest</td><td>MIT</td><td>中英双语 Embedding 模型</td></tr>
+    <tr><td>Tailwind CSS</td><td>4</td><td>MIT</td><td>CSS 框架</td></tr>
+    <tr><td>shadcn/ui</td><td>latest</td><td>MIT</td><td>UI 组件库</td></tr>
+    <tr><td>ECharts (Apache)</td><td>6</td><td>Apache 2.0</td><td>数据可视化</td></tr>
+    <tr><td>Zustand (PMNDRS)</td><td>5</td><td>MIT</td><td>前端状态管理</td></tr>
+    <tr><td>Vercel AI SDK</td><td>6</td><td>Apache 2.0</td><td>AI 对话流式SDK</td></tr>
+    <tr><td>pytest</td><td>8+</td><td>MIT</td><td>Python 测试框架</td></tr>
+    <tr><td>FastAPI</td><td>0.110+</td><td>MIT</td><td>Python Web 框架</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 16. 时间线 ==================== -->
+<div class="section" id="sec16">
+  <h2><span class="num">16</span> 开发时间线与分工</h2>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>第1周：架构设计 + 环境搭建</h4>
+      <ul>
+        <li>深入阅读 OpenMAIC 源码（重点：lib/generation、lib/orchestration、lib/ai）</li>
+        <li>确定技术栈，初始化 Next.js + FastAPI 项目</li>
+        <li>注册讯飞开放平台，获取 Spark/TTS API 密钥</li>
+        <li>收集课程知识库素材（PDF + PPTX + 教材）</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第2周：LLM Provider + RAG 知识库</h4>
+      <ul>
+        <li>实现讯飞星火 Provider（SparkProvider + 分阶段路由）</li>
+        <li>构建课程知识库向量索引（Chroma + BGE-M3）</li>
+        <li>实现 RAG 检索接口 + 防幻觉4层机制框架</li>
+        <li>前端：Chat 基础组件（Vercel AI SDK + shadcn/ui）</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第3周：画像构建 + LangGraph 编排</h4>
+      <ul>
+        <li>实现 ProfileExtractorAgent（6维度抽取）</li>
+        <li>搭建 LangGraph StateGraph 骨架（所有节点 + 边）</li>
+        <li>实现 SSE 流式对话接口</li>
+        <li>前端：ProfileRadar 雷达图 + 流式对话页面</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第4周：资源生成 Agent 集群（核心）</h4>
+      <ul>
+        <li>实现 6 个资源生成 Agent（Doc/Quiz/Mindmap/Video/Code/Reading）</li>
+        <li>对接 KnowledgeRetriever（RAG 约束生成）</li>
+        <li>实现生成 Pipeline（参照 OpenMAIC pipeline-runner）</li>
+        <li>实现 SSE 进度推送</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第5周：路径规划 + 前端核心页面</h4>
+      <ul>
+        <li>实现 PathPlannerAgent + 动态调整逻辑</li>
+        <li>实现学习路径 Timeline 组件</li>
+        <li>Canvas 幻灯片渲染器适配（复用 OpenMAIC）</li>
+        <li>Quiz/Code/Diagram 场景渲染器接入</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第6周：加分项 + 视频生成</h4>
+      <ul>
+        <li>实现 TutorAgent（多模态答疑）</li>
+        <li>实现 EvalAgent（学习效果评估）</li>
+        <li>讯飞 TTS 集成 + 教学视频合成</li>
+        <li>前端：辅导页面 + 评估看板</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第7周：测试 + 优化 + 部署</h4>
+      <ul>
+        <li>pytest + Playwright 自动化测试</li>
+        <li>性能优化（并行/缓存/SSE响应时间）</li>
+        <li>Docker Compose 部署验证</li>
+        <li>内容质量人工抽检</li>
+      </ul>
+    </div>
+    <div class="timeline-item">
+      <h4>第8周：文档 + 视频 + PPT</h4>
+      <ul>
+        <li>撰写系统开发说明书 + 测试说明书</li>
+        <li>录制演示视频（≤7分钟）</li>
+        <li>制作演示 PPT</li>
+        <li>最终检查、打包、提交</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">🎯 关键节点提醒</div>
+    <ul>
+      <li>第4周是核心：6种资源生成完成后系统就"可演示"了</li>
+      <li>第6周的加分项建议不要跳过 — 它是拉开差距的关键</li>
+      <li>第8周预留充足时间打磨文档和视频，这两个加起来占 20%</li>
+      <li>全程在文档中记录使用的科大讯飞工具（iFlyCode / 星火API / TTS），赛题明确要求</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <p>第十五届中国软件杯大赛 · A3赛题开发指南 v2.0</p>
+  <p>架构参考 THU-MAIC/OpenMAIC (MIT License) · 出题企业：科大讯飞</p>
+</div>
+
+</body>
+</html>
