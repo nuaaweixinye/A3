@@ -180,21 +180,21 @@ backend/prompts/
 
 ## 四、六大 Agent 间协同机制
 
-### 4.1 新增：综合摘要 Agent（SynthesisAgent）
+### 4.1 新增：综合摘要 Agent（SynthesisAgent） ~~已完成~~
 
-**动机**：6 个资源 Agent 并行产出后，产物之间没有关联整合。学生面对 6 份独立材料，缺乏全局视角——"该先看哪个？它们之间什么关系？"
+~~**动机**：6 个资源 Agent 并行产出后，产物之间没有关联整合。~~
 
-**设计**：
-- 在 LangGraph 图中新增 `synthesis_agent` 节点
-- 位置：6 个资源 Agent 全部完成 → **汇聚到 SynthesisAgent** → END
-- 输入：所有 6 份 `GeneratedResource` 的 content + 学生学习画像
-- 输出：一份"学习导览"（Study Guide），包含：
-  - **建议学习顺序**（先看哪个、后看哪个，为什么）
-  - **跨资源知识关联**（"文档第 3 节对应题库第 2 题，建议看完文档立即练习"）
-  - **重点标注**（结合画像的 error_patterns 和 weak_points）
-  - **预估总学习时长**
+~~**设计**：~~
+- ~~在 LangGraph 图中新增 `synthesis_agent` 节点~~
+- ~~位置：6 个资源 Agent 全部完成 → **汇聚到 SynthesisAgent** → END~~
+- ~~输入：所有 6 份 `GeneratedResource` 的 content + 学生学习画像 + AgentContext~~
+- ~~输出：一份"学习导览"（Study Guide），包含：~~
+  - ~~建议学习顺序~~
+  - ~~跨资源知识关联~~
+  - ~~重点标注~~
+  - ~~预估总学习时长~~
 
-**LangGraph 图更新**：
+~~**LangGraph 图更新**：~~
 ```
 path_planner
   ├─→ doc_gen ──────┐
@@ -205,69 +205,42 @@ path_planner
   └─→ reading_gen ──┘
 ```
 
-- 不带 synthesis 的旧行为保留为可选项（通过请求参数 `enableSynthesis` 控制）
-- SynthesisAgent **不调度**任何 Agent，只在生成完成后做**汇总整合**（后处理角色）
-- 与 OpenMAIC Director Agent 完全不同——不引入 LLM 决策循环，保持一次性 Pipeline 模式
+~~- 6 个 Agent 全部汇聚到 synthesis_agent，LangGraph 自动等待所有入边完成再执行~~
+~~- SynthesisAgent **不调度**任何 Agent，只在生成完成后做**汇总整合**~~
 
-### 4.2 共享记忆总线（AgentContext）
+### 4.2 共享记忆总线（AgentContext） ~~已完成~~
 
-**动机**：6 个 Agent 并行运行时互不感知。但某些 Agent 的产出对其他 Agent 的内容生成有帮助——例如 Doc 标记了"易错点"，Quiz 应该围绕这些易错点出题。
+~~**设计**：~~
+- ~~在 LangGraph State 中新增 `agentContext` 通道（reducer: merge）~~
+- ~~`makeResourceNode` 在每个 Agent 完成后调用 `extractAgentContext()` 提取摘要，写入 state~~
+- ~~由于 6 个 Agent 并行执行，AgentContext 的可用性取决于执行顺序——能读到就读，读不到不影响生成~~
+- ~~SynthesisAgent 读取完整的 agentContext 用于生成学习导览~~
 
-**设计**：
-- 各 Agent 在生成完成后，由 `resource-runner` 提取一份轻量摘要写入 LangGraph State
-- 摘要内容：Agent 类型、关键知识点列表、标记的易错点/重点
-
-```typescript
-// 在 LangGraph State 中新增
-agentContext: Annotation<Record<string, {
-  agentType: ResourceType;
-  keyPoints: string[];     // 该 Agent 产出的关键知识点
-  flags: string[];         // 标记的易错点/重点
-}>>({
-  reducer: (prev, update) => ({ ...prev, ...update }),
-  default: () => ({}),
-})
-```
-
-- 在 LangGraph 图中，Agent 间的边调整为**先完成的可先写入 context，后启动的可读取已有 context**
-- 实现方式：不改变并行 fan-out，而是在 `runResourceAgent` 的 `buildUserPrompt` 阶段注入当前已完成的 Agent 摘要
-- 由于 6 个 Agent 是并行的，AgentContext 的可用性取决于执行顺序——这没关系，能读到就读，读不到不影响生成
-
-**协同场景**：
+~~**协同场景**：~~
 
 ```
-DocAgent 产出摘要               QuizAgent 读取
-  keyPoints: ["数组定义",         → 出题覆盖"数组定义"和"时间复杂度"
-              "时间复杂度"]
-  flags: ["下标越界",             → 增加一道关于下标越界的陷阱题
-          "动态扩容"]
-
-MindmapAgent 产出摘要            ReadingAgent 读取
-  keyPoints: ["栈的应用",         → 推荐"表达式求值"相关阅读材料
-              "递归与栈"]
+DocAgent 产出摘要               → 写入 agentContext["doc"]
+QuizAgent 产出摘要              → 写入 agentContext["quiz"]
+    ...
+SynthesisAgent 读取全部         → 生成跨资源关联
 ```
 
-### 4.3 跨 Agent 交叉验证
+### 4.3 跨 Agent 交叉验证 ~~已完成（后端部分）~~
 
-**动机**：当前防幻觉机制（4 层）中，第 3 层 factCheck 仅回查知识库。可增加 Agent 间互相检查作为补充质量保障。
+~~**LLM 交叉检查**（针对事实密集型 Agent）：~~
+- ~~DocAgent 的输出 → 由 QuizAgent 视角的 LLM 审视~~
+- ~~CodeAgent 的输出 → 由 DocAgent 视角的 LLM 审视~~
 
-**设计**：
-- 在 6 个资源 Agent 全部完成后，可选地运行交叉检查：
+~~**规则检查**（非 LLM，零成本）：~~
+- ~~MindmapAgent：层级 ≥ 2 层~~
+- ~~VideoAgent：分镜数 ≥ 3 个、SVG viewBox 格式正确~~
+- ~~QuizAgent：题目数 ≥ 4 道、每题都有答案和解析、题型 ≥ 2 种~~
+- ~~CodeAgent：含代码块、复杂度分析、易错点~~
+- ~~DocAgent：含 ≥ 1 个表格、≥ 1 个代码块/Mermaid 图、≥ 3 小节~~
+- ~~ReadingAgent：推荐条目 ≥ 4 条~~
 
-**LLM 交叉检查**（针对事实密集型 Agent）：
-- DocAgent 的输出 → 由 QuizAgent 视角的 LLM 审视："文档中是否遗漏了应该出题的核心概念？"
-- CodeAgent 的输出 → 由 DocAgent 视角的 LLM 审视："代码示例是否正确体现了文档中的核心原理？"
-
-**规则检查**（非 LLM，零成本）：
-- MindmapAgent：层级 ≥ 2 层
-- VideoAgent：分镜数 ≥ 3 个、SVG viewBox 格式正确
-- QuizAgent：题目数 ≥ 4 道、每题都有答案和解析
-- CodeAgent：含代码块和复杂度分析
-- DocAgent：含 ≥ 1 个表格和 ≥ 1 个代码块/Mermaid 图
-- ReadingAgent：推荐条目 ≥ 4 条
-
-- 输出 `crossCheck: { passed: boolean; issues: string[] }`，附在 `GeneratedResource` 上
-- 前端卡片展示"🔍 交叉验证"状态
+~~- 输出 `crossCheck: { passed: boolean; issues: string[] }`，附在 `GeneratedResource.crossCheck` 上，由 `synthesisNode` 统一运行~~
+- 前端卡片展示"🔍 交叉验证"状态 —— **不属于我的范围（🅱 前端负责）**
 
 ### 4.4 资源生成缓存层
 
@@ -322,20 +295,20 @@ MindmapAgent 产出摘要            ReadingAgent 读取
 | 编号 | 内容 | 涉及文件 | 状态 |
 |------|------|----------|------|
 | ~~P1-1~~ | ~~Agent 配置化 + Prompt 模板化（.md 文件管理）~~ | ~~新增 `registry.ts`、`prompts/`~~ | ✅ |
-| P1-2 | 共享记忆总线（AgentContext） | `graph.ts`、`resource-runner.ts`、`types/index.ts` | ⬜ |
-| P1-3 | 新增 SynthesisAgent（综合摘要） | 新增 `synthesis-agent.ts`、`prompts/synthesis/` | ⬜ |
+| ~~P1-2~~ | ~~共享记忆总线（AgentContext）~~ | ~~`graph.ts`、`resource-runner.ts`、`types/index.ts`~~ | ✅ |
+| ~~P1-3~~ | ~~新增 SynthesisAgent（综合摘要）~~ | ~~新增 `synthesis-agent.ts`、`prompts/synthesis/`~~ | ✅ |
 | P1-4 | 资源缓存层 | 新增 `cache.ts` | ⬜ |
 | P1-5 | VideoAgent SVG 动画多样性增强 | `video-agent.ts`、SVG 模板库 | ⬜ |
 | ~~P1-6~~ | ~~CodeAgent 多语言支持（C++/Python/JS 自动切换）~~ | ~~`code-agent.ts`~~ | ✅ |
 
 ### P2（可以做，锦上添花）
 
-| 编号 | 内容 | 涉及文件 |
-|------|------|----------|
-| P2-1 | Agent 可观测性（结构化执行日志） | 新增 `logger.ts` |
-| P2-2 | 跨 Agent 交叉验证（LLM 部分） | 新增 `cross-check.ts` |
-| P2-3 | 知识库缺口检测与标记 | `retriever.ts`、新增 `gap-tracker.ts` |
-| P2-4 | 检索结果结构化（conceptName/difficulty） | `retriever.ts`、`spark-kb.ts` |
+| 编号 | 内容 | 涉及文件 | 状态 |
+|------|------|----------|------|
+| P2-1 | Agent 可观测性（结构化执行日志） | 新增 `logger.ts` | ⬜ |
+| ~~P2-2~~ | ~~跨 Agent 交叉验证（后端部分：LLM检查 + 规则检查）~~ | ~~新增 `cross-check.ts`~~ | ✅ |
+| P2-3 | 知识库缺口检测与标记 | `retriever.ts`、新增 `gap-tracker.ts` | ⬜ |
+| P2-4 | 检索结果结构化（conceptName/difficulty） | `retriever.ts`、`spark-kb.ts` | ⬜ |
 
 ---
 

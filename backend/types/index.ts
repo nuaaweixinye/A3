@@ -64,6 +64,8 @@ export interface GeneratedResource {
   sources: string[];
   /** 防幻觉第 3 层：生成后事实核查结果 */
   fact_check?: FactCheckResult;
+  /** 跨 Agent 交叉验证结果 */
+  crossCheck?: CrossCheckResult;
   created_at: string;
 }
 
@@ -75,6 +77,14 @@ export interface FactCheckResult {
   flagged: string[];
   /** 可核声明总数 */
   checked: number;
+}
+
+/** 跨 Agent 交叉验证结果 */
+export interface CrossCheckResult {
+  passed: boolean;
+  issues: string[];
+  /** LLM 交叉检查的审查方 */
+  reviewer?: string;
 }
 
 /* ===================== LangGraph 共享状态 ===================== */
